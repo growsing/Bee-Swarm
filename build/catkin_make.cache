@@ -1,0 +1,2 @@
+iris_ir_sitl:offboard_pkg
+-DCATKIN_DEVEL_PREFIX=/home/zsj/catkin_ws/devel -DCMAKE_INSTALL_PREFIX=/home/zsj/catkin_ws/install -G Unix Makefiles

@@ -1,0 +1,8 @@
+prefix=/home/zsj/catkin_ws/install
+
+Name: iris_ir_sitl
+Description: Description of iris_ir_sitl
+Version: 0.0.1
+Cflags: 
+Libs: -L${prefix}/lib 
+Requires: gazebo_ros roscpp std_msgs geometry_msgs

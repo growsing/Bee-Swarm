@@ -1,0 +1,26 @@
+<?xml version="1.0"?>
+<launch>
+    <arg name="uav_id" default="1"/>
+    <arg name="x" default="0"/>
+    <arg name="y" default="0"/>
+    <arg name="z" default="1"/>
+    <arg name="Y" default="0"/>
+    
+    <!-- 计算PX4 SITL端口 (基于uav_id) -->
+    <arg name="mavlink_udp_port" value="$(eval 14560 + arg('uav_id'))"/>
+    <arg name="mavlink_tcp_port" value="$(eval 4560 + arg('uav_id'))"/>
+    
+    <!-- 在Gazebo中生成无人机 -->
+    <node name="spawn_iris_ir_$(arg uav_id)" pkg="gazebo_ros" type="spawn_model"
+          args="-sdf -file $(find iris_ir_sitl)/models/iris_zsj_ir/iris_zsj_ir.sdf -model iris_ir_$(arg uav_id)
+                -x $(arg x) -y $(arg y) -z $(arg z) -Y $(arg Y)"
+          output="screen"/>
+    
+    <!-- 启动MAVROS，使用不同的端口避免冲突 -->
+    <include file="$(find mavros)/launch/px4.launch">
+        <arg name="fcu_url" value="udp://:14540@localhost:$(arg mavlink_udp_port)"/>
+        <arg name="gcs_url" value=""/>
+        <arg name="tgt_system" value="$(arg uav_id)"/>
+        <arg name="tgt_component" value="1"/>
+    </include>
+</launch>

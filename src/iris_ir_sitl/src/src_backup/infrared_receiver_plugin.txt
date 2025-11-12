@@ -1,0 +1,288 @@
+#include <gazebo/gazebo.hh>
+#include <gazebo/physics/physics.hh>
+#include <gazebo/common/common.hh>
+#include <ros/ros.h>
+#include <geometry_msgs/Vector3.h>
+#include <std_msgs/Float32.h>
+#include <map>
+#include <cmath>
+#include <mutex>
+
+//单接收器版本，2025/11/04 11:30
+
+
+namespace gazebo
+{
+// 全局标志，表示ROS是否已初始化
+static bool g_ros_initialized_receiver = false;
+static std::mutex g_ros_mutex_receiver;
+
+class InfraredReceiverPlugin : public ModelPlugin
+{
+public:
+    InfraredReceiverPlugin() : 
+        model(nullptr), 
+        updateCount(0),
+        discoveryCount(0) 
+    {}
+
+    void Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
+    {
+        // 存储模型指针
+        this->model = _model;
+        if (!this->model) {
+            gzerr << "Received NULL model pointer!" << std::endl;
+            return;
+        }
+
+        this->modelName = this->model->GetName();
+        gzmsg << "🎯 === InfraredReceiverPlugin Loading for: " << this->modelName << " ===" << std::endl;
+
+        // 安全初始化ROS
+        if (!this->initializeROS()) {
+            gzerr << "❌ Failed to initialize ROS for receiver " << this->modelName << std::endl;
+            return;
+        }
+
+        // 连接更新事件
+        this->updateConnection = event::Events::ConnectWorldUpdateBegin(
+            std::bind(&InfraredReceiverPlugin::OnUpdate, this, std::placeholders::_1));
+
+        // 创建定时器来发现其他无人机
+        this->discoveryTimer = this->rosNode->createTimer(
+            ros::Duration(3.0), &InfraredReceiverPlugin::DiscoverOtherUavs, this);
+
+        gzmsg << "🎉 === InfraredReceiverPlugin SUCCESS for: " << this->modelName << " ===" << std::endl;
+    }
+
+private:
+    bool initializeROS()
+    {
+        std::lock_guard<std::mutex> lock(g_ros_mutex_receiver);
+        
+        // 如果ROS已经初始化，直接创建节点
+        if (g_ros_initialized_receiver) {
+            return this->createROSNode();
+        }
+        
+        // 第一次初始化ROS
+        std::string node_name = "infrared_receiver_master";
+        gzmsg << "Initializing ROS for receiver with node: " << node_name << std::endl;
+        
+        int argc = 0;
+        char **argv = NULL;
+        
+        // 使用NoSigintHandler避免信号处理冲突
+        ros::init(argc, argv, node_name, ros::init_options::NoSigintHandler);
+        
+        if (!ros::master::check()) {
+            gzerr << "ROS master is not running!" << std::endl;
+            return false;
+        }
+        
+        g_ros_initialized_receiver = true;
+        gzmsg << "✅ ROS initialized successfully for receivers" << std::endl;
+        
+        return this->createROSNode();
+    }
+    
+    bool createROSNode()
+    {
+        try {
+            // 创建节点句柄
+            this->rosNode.reset(new ros::NodeHandle());
+            
+            // 创建发布器 - 距离和强度
+            std::string distance_topic = "/uav/infrared/receiver/distance_" + this->modelName;
+            std::string strength_topic = "/uav/infrared/receiver/strength_" + this->modelName;
+            
+            this->distancePub = this->rosNode->advertise<std_msgs::Float32>(distance_topic, 10);
+            this->strengthPub = this->rosNode->advertise<std_msgs::Float32>(strength_topic, 10);
+            
+            gzmsg << "✅ Receiver " << this->modelName << " publishing to:" << std::endl;
+            gzmsg << "   Distance: " << distance_topic << std::endl;
+            gzmsg << "   Strength: " << strength_topic << std::endl;
+            
+            return true;
+            
+        } catch (const std::exception& e) {
+            gzerr << "❌ Failed to create ROS node for receiver: " << e.what() << std::endl;
+            return false;
+        }
+    }
+
+    void DiscoverOtherUavs(const ros::TimerEvent& event)
+    {
+        if (!this->rosNode) return;
+
+        discoveryCount++;
+        
+        // 每3次发现才输出一次日志，避免太频繁
+        if (discoveryCount % 3 == 1) {
+            gzmsg << "🔍 Receiver " << this->modelName << " discovering other UAVs (attempt " << discoveryCount << ")..." << std::endl;
+        }
+
+        // 获取所有已发布的红外发射器话题
+        ros::master::V_TopicInfo topics;
+        ros::master::getTopics(topics);
+        
+        int new_subscriptions = 0;
+        for (const auto& topic : topics) {
+            std::string topic_name = topic.name;
+            
+            // 查找红外发射器话题
+            if (topic_name.find("/uav/infrared/emitter/") != std::string::npos) {
+                // 提取无人机名称
+                size_t pos = topic_name.find_last_of("/");
+                std::string uav_name = topic_name.substr(pos + 1);
+                
+                // 如果不是自己且尚未订阅
+                if (uav_name != this->modelName && 
+                    this->otherUavSubscriptions.find(uav_name) == this->otherUavSubscriptions.end()) {
+                    
+                    // 订阅这个无人机的话题
+                    try {
+                        ros::Subscriber sub = this->rosNode->subscribe<geometry_msgs::Vector3>(
+                            topic_name, 10,
+                            boost::bind(&InfraredReceiverPlugin::OnOtherUavSignal, this, _1, uav_name));
+                        
+                        this->otherUavSubscriptions[uav_name] = sub;
+                        new_subscriptions++;
+                        
+                        if (discoveryCount % 3 == 1) {
+                            gzmsg << "   ✅ Subscribed to: " << uav_name << std::endl;
+                        }
+                    } catch (const std::exception& e) {
+                        gzerr << "   ❌ Failed to subscribe to " << uav_name << ": " << e.what() << std::endl;
+                    }
+                }
+            }
+        }
+        
+        if (new_subscriptions > 0 && discoveryCount % 3 == 1) {
+            gzmsg << "   📡 Total subscriptions: " << this->otherUavSubscriptions.size() << std::endl;
+        }
+    }
+    
+    void OnOtherUavSignal(const geometry_msgs::Vector3::ConstPtr& msg, const std::string& emitter_name)
+    {
+        // 存储其他无人机的位置信息
+        std::lock_guard<std::mutex> lock(this->dataMutex);
+        this->otherUavPositions[emitter_name] = *msg;
+    }
+    
+    void OnUpdate(const common::UpdateInfo &_info)
+    {
+        // 安全检查
+        if (!this->model || !this->rosNode || !this->distancePub || !this->strengthPub) {
+            return;
+        }
+
+        // 初始化时间
+        if (this->lastUpdateTime == common::Time::Zero) {
+            this->lastUpdateTime = _info.simTime;
+        }
+
+        // 控制更新频率 (2Hz)
+        double updateRate = 2.0;
+        if ((_info.simTime - this->lastUpdateTime).Double() < 1.0 / updateRate) {
+            return;
+        }
+        this->lastUpdateTime = _info.simTime;
+
+        // 获取接收器位置
+        ignition::math::Pose3d receiverPose = this->model->WorldPose();
+        ignition::math::Vector3d receiverPos = receiverPose.Pos();
+
+        std::lock_guard<std::mutex> lock(this->dataMutex);
+        
+        // 计算与所有其他无人机的综合距离和信号强度
+        double totalDistance = 0.0;
+        double totalStrength = 0.0;
+        int validSignals = 0;
+
+        for (const auto& pair : this->otherUavPositions) {
+            const std::string& emitter_name = pair.first;
+            const geometry_msgs::Vector3& emitter_pos = pair.second;
+            
+            // 计算距离
+            double dx = emitter_pos.x - receiverPos.X();
+            double dy = emitter_pos.y - receiverPos.Y();
+            double dz = emitter_pos.z - receiverPos.Z();
+            double distance = sqrt(dx*dx + dy*dy + dz*dz);
+            
+            double range = 15.0; // 最大检测范围
+            
+            // 检查是否在有效范围内
+            if (distance <= range && distance > 0.1) {
+                // 计算信号强度（与距离平方成反比）
+                double strength = 1.0 / (1.0 + distance * distance);
+                
+                totalDistance += distance;
+                totalStrength += strength;
+                validSignals++;
+            }
+        }
+        
+        // 发布综合信息
+        if (validSignals > 0) {
+            // 平均距离
+            std_msgs::Float32 distanceMsg;
+            distanceMsg.data = totalDistance / validSignals;
+            this->distancePub.publish(distanceMsg);
+            
+            // 总信号强度
+            std_msgs::Float32 strengthMsg;
+            strengthMsg.data = totalStrength;
+            this->strengthPub.publish(strengthMsg);
+            
+            // 减少日志频率
+            if (this->updateCount % 20 == 0) {
+                gzmsg << "📊 Receiver " << this->modelName << ": " 
+                      << validSignals << " UAVs detected, avg_distance=" 
+                      << std::fixed << std::setprecision(2) << distanceMsg.data 
+                      << "m, total_strength=" << std::setprecision(4) << strengthMsg.data << std::endl;
+            }
+        } else {
+            // 没有检测到信号
+            std_msgs::Float32 distanceMsg;
+            distanceMsg.data = -1.0;  // 无效距离
+            this->distancePub.publish(distanceMsg);
+            
+            std_msgs::Float32 strengthMsg;
+            strengthMsg.data = 0.0;
+            this->strengthPub.publish(strengthMsg);
+            
+            // 减少日志频率
+            if (this->updateCount % 40 == 0) {
+                gzmsg << "🔇 Receiver " << this->modelName << ": no signals detected" << std::endl;
+            }
+        }
+        
+        this->updateCount++;
+    }
+
+    physics::ModelPtr model;
+    std::string modelName;
+    event::ConnectionPtr updateConnection;
+    std::unique_ptr<ros::NodeHandle> rosNode;
+    
+    // 发布器
+    ros::Publisher distancePub;
+    ros::Publisher strengthPub;
+    
+    // 订阅器管理
+    std::map<std::string, ros::Subscriber> otherUavSubscriptions;
+    std::map<std::string, geometry_msgs::Vector3> otherUavPositions;
+    std::mutex dataMutex;
+    
+    // 定时器
+    ros::Timer discoveryTimer;
+    
+    common::Time lastUpdateTime;
+    int updateCount;
+    int discoveryCount;
+};
+
+GZ_REGISTER_MODEL_PLUGIN(InfraredReceiverPlugin)
+}

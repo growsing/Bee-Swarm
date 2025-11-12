@@ -1,0 +1,418 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+## 位置控制，靠近但太近会远离
+
+import rospy
+import math
+import threading
+import time
+from geometry_msgs.msg import PoseStamped, Vector3, TwistStamped
+from std_msgs.msg import Header
+from mavros_msgs.msg import State
+from mavros_msgs.srv import SetMode, CommandBool
+
+class UAVController:
+    def __init__(self, uav_id):
+        self.uav_id = uav_id
+        # 根据您的launch文件，命名空间为 iris_zsj_ir0, iris_zsj_ir1, iris_zsj_ir2
+        self.namespace = "iris_zsj_ir{}".format(uav_id)
+        # 模型名称也是 iris_zsj_ir0, iris_zsj_ir1, iris_zsj_ir2
+        self.model_name = "iris_zsj_ir{}".format(uav_id)
+        
+        # 状态变量
+        self.current_pose = None
+        self.current_state = None
+        self.infrared_direction = Vector3()  # 红外方向信息  
+        self.infrared_strength = 0.0
+        self.connected = False
+        self.armed = False
+        self.offboard_set = False
+        self.last_req = rospy.Time.now()
+        
+        # 控制参数
+        self.target_altitude = 1.0  # 目标高度
+        self.base_speed = 2.0       # 增加基础移动速度
+        self.strength_threshold = 0.5  # 信号强度阈值，超过则反向移动
+        
+        # 位置设定点
+        self.sp = PoseStamped()
+        self.sp.pose.orientation.w = 1.0
+        self.sp.pose.position.x = 0.0
+        self.sp.pose.position.y = 0.0
+        self.sp.pose.position.z = self.target_altitude
+        
+        # 当前位置formation_control
+        self.current_x = 0.0
+        self.current_y = 0.0
+        self.current_z = 0.0
+        
+        # 初始化ROS
+        self.init_ros()
+        
+    def init_ros(self):
+        """初始化ROS发布器和订阅器"""
+        rospy.loginfo("Initializing UAV {} controller...".format(self.uav_id))
+        
+        # Publisher - 位置控制
+        self.pos_pub = rospy.Publisher('/{}/mavros/setpoint_position/local'.format(self.namespace), 
+                                      PoseStamped, queue_size=10)
+        
+        # Subscriber - 当前位置
+        rospy.Subscriber('/{}/mavros/local_position/pose'.format(self.namespace), 
+                        PoseStamped, self.pose_callback)
+        
+        # Subscriber - 状态
+        rospy.Subscriber('/{}/mavros/state'.format(self.namespace), 
+                        State, self.state_callback)
+        
+        # Subscriber - 红外方向（根据模型名称订阅）
+        rospy.Subscriber('/uav/infrared/receiver/direction_{}'.format(self.model_name), 
+                        Vector3, self.infrared_callback)
+        
+        # client - 设置模式和解锁
+        try:
+            rospy.wait_for_service('/{}/mavros/set_mode'.format(self.namespace), timeout=10)
+            rospy.wait_for_service('/{}/mavros/cmd/arming'.format(self.namespace), timeout=10)
+            self.set_mode_client = rospy.ServiceProxy('/{}/mavros/set_mode'.format(self.namespace), SetMode)
+            self.arm_client = rospy.ServiceProxy('/{}/mavros/cmd/arming'.format(self.namespace), CommandBool)
+            rospy.loginfo("UAV {} service clients initialized".format(self.uav_id))
+        except rospy.ROSException as e:
+            rospy.logerr("UAV {} failed to initialize service clients: {}".format(self.uav_id, e))
+            self.set_mode_client = None
+            self.arm_client = None
+        
+        rospy.loginfo("UAV {} controller initialized (namespace: {})".format(self.uav_id, self.namespace))
+    
+    def pose_callback(self, msg):
+        """接收位置信息"""
+        self.current_pose = msg
+        # 更新当前位置
+        self.current_x = msg.pose.position.x
+        self.current_y = msg.pose.position.y
+        self.current_z = msg.pose.position.z
+    
+    def state_callback(self, msg):
+        """接收状态信息"""
+        self.current_state = msg
+        if msg.connected and not self.connected:
+            self.connected = True
+            rospy.loginfo("UAV {} connected to FCU!".format(self.uav_id))
+        if msg.armed and not self.armed:
+            self.armed = True
+            rospy.loginfo("UAV {} armed!".format(self.uav_id))
+        if msg.mode == "OFFBOARD" and not self.offboard_set:
+            self.offboard_set = True
+            rospy.loginfo("UAV {} OFFBOARD mode set!".format(self.uav_id))
+    
+    def infrared_callback(self, msg):
+        """接收红外方向信息"""
+        self.infrared_direction = msg
+        self.infrared_strength = msg.z
+    
+    def wait_for_connection(self, timeout=60):
+        """等待连接到MAVROS"""
+        rospy.loginfo("UAV {} waiting for MAVROS connection...".format(self.uav_id))
+        start_time = time.time()
+        
+        # 先等待状态消息
+        while not rospy.is_shutdown() and (self.current_state is None):
+            if time.time() - start_time > timeout:
+                rospy.logerr("UAV {} timeout waiting for state message".format(self.uav_id))
+                return False
+            rospy.sleep(0.1)
+        
+        # 然后等待连接状态
+        while not rospy.is_shutdown() and (not self.current_state.connected):
+            if time.time() - start_time > timeout:
+                rospy.logerr("UAV {} timeout waiting for FCU connection".format(self.uav_id))
+                return False
+            rospy.loginfo_throttle(5, "UAV {} waiting for FCU connection...".format(self.uav_id))
+            rospy.sleep(0.1)
+        
+        rospy.loginfo("UAV {} connected to MAVROS".format(self.uav_id))
+        return True
+    
+    def set_mode(self, mode):
+        """设置飞行模式"""
+        if self.set_mode_client is None:
+            rospy.logerr("UAV {} set_mode client not available".format(self.uav_id))
+            return False
+            
+        try:
+            response = self.set_mode_client(custom_mode=mode)
+            if response.mode_sent:
+                rospy.loginfo("UAV {} set to {} mode".format(self.uav_id, mode))
+            else:
+                rospy.logwarn("UAV {} failed to set {} mode".format(self.uav_id, mode))
+            return response.mode_sent
+        except rospy.ServiceException as e:
+            rospy.logerr("UAV {} set_mode service call failed: {}".format(self.uav_id, e))
+            return False
+    
+    def arm(self, arm=True):
+        """解锁无人机"""
+        if self.arm_client is None:
+            rospy.logerr("UAV {} arm client not available".format(self.uav_id))
+            return False
+            
+        try:
+            response = self.arm_client(value=arm)
+            if response.success:
+                if arm:
+                    rospy.loginfo("UAV {} armed".format(self.uav_id))
+                else:
+                    rospy.loginfo("UAV {} disarmed".format(self.uav_id))
+            else:
+                rospy.logwarn("UAV {} arming failed".format(self.uav_id))
+            return response.success
+        except rospy.ServiceException as e:
+            rospy.logerr("UAV {} arming service call failed: {}".format(self.uav_id, e))
+            return False
+    
+    def publish_setpoint(self, x=None, y=None, z=None):
+        """发布位置设定点"""
+        self.sp.header.stamp = rospy.Time.now()
+        self.sp.header.frame_id = "base_link"
+        
+        # 如果提供了新位置，则更新设定点
+        if x is not None:
+            self.sp.pose.position.x = x
+        if y is not None:
+            self.sp.pose.position.y = y
+        if z is not None:
+            self.sp.pose.position.z = z
+            
+        self.pos_pub.publish(self.sp)
+    
+    def send_initial_setpoints(self):
+        """发送初始设置点"""
+        rospy.loginfo("UAV {} sending initial setpoints...".format(self.uav_id))
+        for i in range(100):
+            if rospy.is_shutdown():
+                return False
+            self.publish_setpoint()
+            rospy.sleep(0.05)
+        return True
+    
+    def calculate_movement_direction(self):
+        """根据红外信号计算移动方向"""
+        if self.infrared_strength < 0.001:  # 无信号
+            return 0, 0
+        
+        # 获取红外方向
+        dir_x = self.infrared_direction.x
+        dir_y = self.infrared_direction.y
+        
+        # 如果信号强度超过阈值，反向移动
+        if self.infrared_strength > self.strength_threshold:
+            dir_x = -dir_x
+            dir_y = -dir_y
+            rospy.loginfo_throttle(2, "UAV {} avoiding collision (strength: {:.3f}, dir: [{:.2f}, {:.2f}])".format(
+                self.uav_id, self.infrared_strength, dir_x, dir_y))
+        else:
+            rospy.loginfo_throttle(2, "UAV {} moving toward signal (strength: {:.3f}, dir: [{:.2f}, {:.2f}])".format(
+                self.uav_id, self.infrared_strength, dir_x, dir_y))
+        
+        return dir_x, dir_y
+    
+    def formation_control(self):
+        """编队控制主循环"""
+        rate = rospy.Rate(20)  # 20Hz控制频率
+        
+        while not rospy.is_shutdown():
+            if not self.current_pose:
+                rate.sleep()
+                continue
+            
+            # 计算移动方向（仅平面移动）
+            move_x, move_y = self.calculate_movement_direction()
+            
+            # 计算目标位置（基于移动方向，保持高度不变）
+            # 增加移动速度因子，确保无人机能够移动
+            target_x = self.current_x + move_x * self.base_speed * 0.2
+            target_y = self.current_y + move_y * self.base_speed * 0.2
+            
+            # 发送位置指令 - 明确指定新位置
+            self.publish_setpoint(x=target_x, y=target_y, z=self.target_altitude)
+            
+            rate.sleep()
+
+
+class FormationController:
+    def __init__(self):
+        rospy.init_node('formation_controller')
+        
+        # 创建三个无人机控制器 - ID对应0,1,2
+        self.uavs = [
+            UAVController(0),  # iris_zsj_ir0
+            UAVController(1),  # iris_zsj_ir1
+            UAVController(2),  # iris_zsj_ir2
+            UAVController(3),  # iris_zsj_ir3
+            UAVController(4)   # iris_zsj_ir4
+        ]
+        
+        self.control_threads = []
+        
+        rospy.loginfo("Formation controller initialized for PX4-style launch")
+    
+    def start_sequence(self):
+        """启动序列：连接 -> 发送设定点 -> OFFBOARD模式 -> 解锁 -> 编队控制"""
+        rospy.loginfo("Starting formation control sequence")
+        
+        # 步骤1: 等待所有无人机连接
+        rospy.loginfo("Step 1: Waiting for all UAVs to connect...")
+        connection_success = True
+        for uav in self.uavs:
+            if not uav.wait_for_connection(timeout=60):
+                connection_success = False
+                rospy.logerr("UAV {} failed to connect".format(uav.uav_id))
+        
+        if not connection_success:
+            rospy.logerr("Some UAVs failed to connect")
+            return False
+        
+        rospy.sleep(2)
+        
+        # 步骤2: 发送初始设定点
+        rospy.loginfo("Step 2: Sending initial setpoints to all UAVs...")
+        setpoint_threads = []
+        for uav in self.uavs:
+            thread = threading.Thread(target=uav.send_initial_setpoints)
+            thread.daemon = True
+            thread.start()
+            setpoint_threads.append(thread)
+        
+        # 等待所有设置点发送完成
+        for thread in setpoint_threads:
+            thread.join()
+        
+        rospy.loginfo("All initial setpoints sent")
+        rospy.sleep(1)
+        
+        # 步骤3: OFFBOARD模式设置和解锁
+        rospy.loginfo("Step 3: Setting OFFBOARD mode and arming...")
+        
+        max_wait_time = 60.0
+        start_time = rospy.Time.now()
+        status_print_time = rospy.Time.now()
+        
+        rate = rospy.Rate(20)
+        
+        while not rospy.is_shutdown():
+            current_time = (rospy.Time.now() - start_time).to_sec()
+            if current_time > max_wait_time:
+                rospy.logwarn("Timeout waiting for all drones to be ready")
+                break
+            
+            # 持续发布位置信息
+            for uav in self.uavs:
+                uav.publish_setpoint()
+            
+            all_ready = True
+            current_loop_time = rospy.Time.now()
+            
+            for uav in self.uavs:
+                if not uav.current_state.connected:
+                    rospy.logwarn_throttle(10, "%s waiting for connection...", uav.namespace)
+                    all_ready = False
+                    continue
+                
+                # 设置OFFBOARD模式
+                if not uav.offboard_set:
+                    if uav.current_state.mode != "OFFBOARD" and (current_loop_time - uav.last_req) > rospy.Duration(5.0):
+                        if uav.set_mode("OFFBOARD"):
+                            uav.offboard_set = True
+                            rospy.loginfo("%s successfully entered OFFBOARD mode!", uav.namespace)
+                        uav.last_req = current_loop_time
+                    elif uav.current_state.mode == "OFFBOARD":
+                        uav.offboard_set = True
+                        rospy.loginfo("%s is already in OFFBOARD mode", uav.namespace)
+                
+                if not uav.offboard_set:
+                    all_ready = False
+                    continue
+                
+                # 尝试解锁
+                if not uav.armed:
+                    if not uav.current_state.armed and (current_loop_time - uav.last_req) > rospy.Duration(5.0):
+                        if uav.arm(True):
+                            uav.armed = True
+                            rospy.loginfo("%s successfully armed!", uav.namespace)
+                        uav.last_req = current_loop_time
+                    elif uav.current_state.armed:
+                        uav.armed = True
+                        rospy.loginfo("%s is already armed", uav.namespace)
+                
+                if not uav.armed:
+                    all_ready = False
+            
+            # 定期打印状态
+            if (rospy.Time.now() - status_print_time).to_sec() > 5.0:
+                rospy.loginfo("Current status summary:")
+                ready_count = 0
+                for uav in self.uavs:
+                    status = "READY" if (uav.armed and uav.offboard_set) else "NOT READY"
+                    if uav.armed and uav.offboard_set:
+                        ready_count += 1
+                    rospy.loginfo("  %s: %s - Connected: %s, Armed: %s, Mode: %s", 
+                                 uav.namespace, status, uav.current_state.connected, 
+                                 uav.current_state.armed, uav.current_state.mode)
+                rospy.loginfo("Ready: %d/%d drones", ready_count, len(self.uavs))
+                status_print_time = rospy.Time.now()
+            
+            if all_ready:
+                rospy.loginfo("All drones are ready for formation control!")
+                break
+                
+            rate.sleep()
+        
+        # 步骤4: 启动编队控制
+        rospy.loginfo("Step 4: Starting formation control...")
+        for i, uav in enumerate(self.uavs):
+            thread = threading.Thread(target=uav.formation_control)
+            thread.daemon = True
+            thread.start()
+            self.control_threads.append(thread)
+            rospy.loginfo("Started control thread for UAV {}".format(i))
+        
+        return True
+    
+    def run(self):
+        """运行编队控制器"""
+        if self.start_sequence():
+            rospy.loginfo("Formation control is running! Press Ctrl+C to stop.")
+            
+            # 主循环 - 监控状态
+            rate = rospy.Rate(10)
+            while not rospy.is_shutdown():
+                # 监控线程状态
+                active_threads = sum(1 for thread in self.control_threads if thread.is_alive())
+                
+                # 显示当前位置信息和状态
+                for uav in self.uavs:
+                    if uav.current_pose:
+                        pos = uav.current_pose.pose.position
+                        rospy.loginfo_throttle(3, "UAV {}: pos({:.2f}, {:.2f}, {:.2f}) | strength: {:.3f} | mode: {} | armed: {}".format(
+                            uav.uav_id, pos.x, pos.y, pos.z, uav.infrared_strength,
+                            uav.current_state.mode if uav.current_state else "Unknown",
+                            uav.current_state.armed if uav.current_state else "Unknown"))
+                
+                rospy.loginfo_throttle(10, "Active control threads: {}/3".format(active_threads))
+                rate.sleep()
+        else:
+            rospy.logerr("Formation control startup failed")
+
+
+def main():
+    try:
+        controller = FormationController()
+        controller.run()
+    except rospy.ROSInterruptException:
+        rospy.loginfo("Formation controller shutdown")
+    except Exception as e:
+        rospy.logerr("Formation controller error: {}".format(e))
+
+
+if __name__ == '__main__':
+    main()

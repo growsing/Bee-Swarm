@@ -1,0 +1,63 @@
+<?xml version="1.0"?>
+<launch>
+    <!-- Gazebo参数 -->
+    <arg name="world" default="$(find iris_ir_sitl)/worlds/empty.world"/>
+    <arg name="paused" default="false"/>
+    <arg name="use_sim_time" default="true"/>
+    <arg name="gui" default="true"/>
+    <arg name="headless" default="false"/>
+    <arg name="debug" default="false"/>
+    <arg name="verbose" default="true"/>
+    
+    <!-- 设置环境变量 -->
+    <env name="GAZEBO_PLUGIN_PATH" value="$(find iris_ir_sitl)/../../devel/lib:$(optenv GAZEBO_PLUGIN_PATH)"/>
+    <env name="GAZEBO_MODEL_PATH" value="$(find iris_ir_sitl)/models:$(optenv GAZEBO_MODEL_PATH)"/>
+    <env name="GAZEBO_RESOURCE_PATH" value="$(find iris_ir_sitl):$(optenv GAZEBO_RESOURCE_PATH)"/>
+    
+    <!-- 启动Gazebo，使用详细输出 -->
+    <include file="$(find gazebo_ros)/launch/empty_world.launch">
+        <arg name="world_name" value="$(arg world)"/>
+        <arg name="debug" value="$(arg debug)"/>
+        <arg name="gui" value="$(arg gui)"/>
+        <arg name="paused" value="$(arg paused)"/>
+        <arg name="use_sim_time" value="$(arg use_sim_time)"/>
+        <arg name="headless" value="$(arg headless)"/>
+        <arg name="verbose" value="$(arg verbose)"/>
+    </include>
+    
+    <!-- 等待Gazebo完全启动 -->
+    <arg name="node_start_delay" default="10.0" />
+    
+    <!-- 生成无人机 -->
+    <group ns="uav1">
+        <include file="$(find iris_ir_sitl)/launch/iris_ir.launch">
+            <arg name="uav_id" value="0"/>
+            <arg name="x" value="0"/>
+            <arg name="y" value="0"/>
+            <arg name="z" value="1"/>
+            <arg name="Y" value="0"/>
+        </include>
+    </group>
+    
+    <group ns="uav2">
+        <node pkg="rostopic" type="rostopic" name="wait_for_gazebo" args="echo -n 1 /gazebo/model_states" launch-prefix="bash -c 'sleep $(arg node_start_delay); $0 $@' "/>
+        <include file="$(find iris_ir_sitl)/launch/iris_ir.launch">
+            <arg name="uav_id" value="1"/>
+            <arg name="x" value="1"/>
+            <arg name="y" value="1"/>
+            <arg name="z" value="1"/>
+            <arg name="Y" value="1.5"/>
+        </include>
+    </group>
+
+    <group ns="uav3">
+        <node pkg="rostopic" type="rostopic" name="wait_for_gazebo" args="echo -n 1 /gazebo/model_states" launch-prefix="bash -c 'sleep $(arg node_start_delay); $0 $@' "/>
+        <include file="$(find iris_ir_sitl)/launch/iris_ir.launch">
+            <arg name="uav_id" value="2"/>
+            <arg name="x" value="3"/>
+            <arg name="y" value="-1"/>
+            <arg name="z" value="1"/>
+            <arg name="Y" value="0"/>
+        </include>
+    </group>
+</launch>
