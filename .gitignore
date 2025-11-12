@@ -1,0 +1,38 @@
+# 编译生成的文件
+build/
+devel/
+install/
+*.pyc
+__pycache__/
+*.so
+*.o
+
+# ROS日志文件
+*.log
+*.bag
+*.active
+
+# Gazebo缓存
+.gazebo/
+
+# PX4编译文件
+PX4_Firmware/build/
+
+# 系统文件
+.DS_Store
+Thumbs.db
+
+# 临时文件
+*~
+*.tmp
+*.swp
+
+# IDE文件
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# 文档备份文件
+*.bak
+*.backup
