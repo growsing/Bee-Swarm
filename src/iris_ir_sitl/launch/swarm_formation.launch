@@ -32,8 +32,8 @@
         <arg name="ID" value="0"/>
         <arg name="fcu_url" default="udp://:10540@localhost:14580"/>
         <include file="$(find px4)/launch/single_vehicle_spawn.launch">
-            <arg name="x" value="-5.00"/>
-            <arg name="y" value="-5.00"/>
+            <arg name="x" value="-7.00"/>
+            <arg name="y" value="-7.00"/>
             <arg name="z" value="0.50"/>
             <arg name="vehicle" value="iris_zsj_ir"/>
             <arg name="mavlink_udp_port" value="14580"/>
@@ -53,8 +53,8 @@
         <arg name="ID" value="1"/>
         <arg name="fcu_url" default="udp://:10541@localhost:14581"/>
         <include file="$(find px4)/launch/single_vehicle_spawn.launch">
-            <arg name="x" value="-3.00"/>
-            <arg name="y" value="-5.00"/>
+            <arg name="x" value="-5.00"/>
+            <arg name="y" value="-7.00"/>
             <arg name="z" value="0.50"/>
             <arg name="vehicle" value="iris_zsj_ir"/>
             <arg name="mavlink_udp_port" value="14581"/>
@@ -74,8 +74,8 @@
         <arg name="ID" value="2"/>
         <arg name="fcu_url" default="udp://:10542@localhost:14582"/>
         <include file="$(find px4)/launch/single_vehicle_spawn.launch">
-            <arg name="x" value="-1.00"/>
-            <arg name="y" value="-5.00"/>
+            <arg name="x" value="-3.00"/>
+            <arg name="y" value="-7.00"/>
             <arg name="z" value="0.50"/>
             <arg name="vehicle" value="iris_zsj_ir"/>
             <arg name="mavlink_udp_port" value="14582"/>
@@ -95,8 +95,8 @@
         <arg name="ID" value="3"/>
         <arg name="fcu_url" default="udp://:10543@localhost:14583"/>
         <include file="$(find px4)/launch/single_vehicle_spawn.launch">
-            <arg name="x" value="1.00"/>
-            <arg name="y" value="-5.00"/>
+            <arg name="x" value="-1.00"/>
+            <arg name="y" value="-7.00"/>
             <arg name="z" value="0.50"/>
             <arg name="vehicle" value="iris_zsj_ir"/>
             <arg name="mavlink_udp_port" value="14583"/>
@@ -116,8 +116,8 @@
         <arg name="ID" value="4"/>
         <arg name="fcu_url" default="udp://:10544@localhost:14584"/>
         <include file="$(find px4)/launch/single_vehicle_spawn.launch">
-            <arg name="x" value="3.00"/>
-            <arg name="y" value="-5.00"/>
+            <arg name="x" value="1.00"/>
+            <arg name="y" value="-7.00"/>
             <arg name="z" value="0.50"/>
             <arg name="vehicle" value="iris_zsj_ir"/>
             <arg name="mavlink_udp_port" value="14584"/>
@@ -137,8 +137,8 @@
         <arg name="ID" value="5"/>
         <arg name="fcu_url" default="udp://:10545@localhost:14585"/>
         <include file="$(find px4)/launch/single_vehicle_spawn.launch">
-            <arg name="x" value="5.00"/>
-            <arg name="y" value="-5.00"/>
+            <arg name="x" value="3.00"/>
+            <arg name="y" value="-7.00"/>
             <arg name="z" value="0.50"/>
             <arg name="vehicle" value="iris_zsj_ir"/>
             <arg name="mavlink_udp_port" value="14585"/>
@@ -158,8 +158,8 @@
         <arg name="ID" value="6"/>
         <arg name="fcu_url" default="udp://:10546@localhost:14586"/>
         <include file="$(find px4)/launch/single_vehicle_spawn.launch">
-            <arg name="x" value="-5.00"/>
-            <arg name="y" value="-3.00"/>
+            <arg name="x" value="5.00"/>
+            <arg name="y" value="-7.00"/>
             <arg name="z" value="0.50"/>
             <arg name="vehicle" value="iris_zsj_ir"/>
             <arg name="mavlink_udp_port" value="14586"/>
@@ -179,8 +179,8 @@
         <arg name="ID" value="7"/>
         <arg name="fcu_url" default="udp://:10547@localhost:14587"/>
         <include file="$(find px4)/launch/single_vehicle_spawn.launch">
-            <arg name="x" value="-3.00"/>
-            <arg name="y" value="-3.00"/>
+            <arg name="x" value="7.00"/>
+            <arg name="y" value="-7.00"/>
             <arg name="z" value="0.50"/>
             <arg name="vehicle" value="iris_zsj_ir"/>
             <arg name="mavlink_udp_port" value="14587"/>
@@ -200,8 +200,8 @@
         <arg name="ID" value="8"/>
         <arg name="fcu_url" default="udp://:10548@localhost:14588"/>
         <include file="$(find px4)/launch/single_vehicle_spawn.launch">
-            <arg name="x" value="-1.00"/>
-            <arg name="y" value="-3.00"/>
+            <arg name="x" value="-7.00"/>
+            <arg name="y" value="-5.00"/>
             <arg name="z" value="0.50"/>
             <arg name="vehicle" value="iris_zsj_ir"/>
             <arg name="mavlink_udp_port" value="14588"/>
@@ -221,8 +221,8 @@
         <arg name="ID" value="9"/>
         <arg name="fcu_url" default="udp://:10549@localhost:14589"/>
         <include file="$(find px4)/launch/single_vehicle_spawn.launch">
-            <arg name="x" value="1.00"/>
-            <arg name="y" value="-3.00"/>
+            <arg name="x" value="-5.00"/>
+            <arg name="y" value="-5.00"/>
             <arg name="z" value="0.50"/>
             <arg name="vehicle" value="iris_zsj_ir"/>
             <arg name="mavlink_udp_port" value="14589"/>
@@ -242,8 +242,8 @@
         <arg name="ID" value="10"/>
         <arg name="fcu_url" default="udp://:10550@localhost:14590"/>
         <include file="$(find px4)/launch/single_vehicle_spawn.launch">
-            <arg name="x" value="3.00"/>
-            <arg name="y" value="-3.00"/>
+            <arg name="x" value="-3.00"/>
+            <arg name="y" value="-5.00"/>
             <arg name="z" value="0.50"/>
             <arg name="vehicle" value="iris_zsj_ir"/>
             <arg name="mavlink_udp_port" value="14590"/>
@@ -263,8 +263,8 @@
         <arg name="ID" value="11"/>
         <arg name="fcu_url" default="udp://:10551@localhost:14591"/>
         <include file="$(find px4)/launch/single_vehicle_spawn.launch">
-            <arg name="x" value="5.00"/>
-            <arg name="y" value="-3.00"/>
+            <arg name="x" value="-1.00"/>
+            <arg name="y" value="-5.00"/>
             <arg name="z" value="0.50"/>
             <arg name="vehicle" value="iris_zsj_ir"/>
             <arg name="mavlink_udp_port" value="14591"/>
@@ -284,8 +284,8 @@
         <arg name="ID" value="12"/>
         <arg name="fcu_url" default="udp://:10552@localhost:14592"/>
         <include file="$(find px4)/launch/single_vehicle_spawn.launch">
-            <arg name="x" value="-5.00"/>
-            <arg name="y" value="-1.00"/>
+            <arg name="x" value="1.00"/>
+            <arg name="y" value="-5.00"/>
             <arg name="z" value="0.50"/>
             <arg name="vehicle" value="iris_zsj_ir"/>
             <arg name="mavlink_udp_port" value="14592"/>
@@ -305,8 +305,8 @@
         <arg name="ID" value="13"/>
         <arg name="fcu_url" default="udp://:10553@localhost:14593"/>
         <include file="$(find px4)/launch/single_vehicle_spawn.launch">
-            <arg name="x" value="-3.00"/>
-            <arg name="y" value="-1.00"/>
+            <arg name="x" value="3.00"/>
+            <arg name="y" value="-5.00"/>
             <arg name="z" value="0.50"/>
             <arg name="vehicle" value="iris_zsj_ir"/>
             <arg name="mavlink_udp_port" value="14593"/>
@@ -326,8 +326,8 @@
         <arg name="ID" value="14"/>
         <arg name="fcu_url" default="udp://:10554@localhost:14594"/>
         <include file="$(find px4)/launch/single_vehicle_spawn.launch">
-            <arg name="x" value="-1.00"/>
-            <arg name="y" value="-1.00"/>
+            <arg name="x" value="5.00"/>
+            <arg name="y" value="-5.00"/>
             <arg name="z" value="0.50"/>
             <arg name="vehicle" value="iris_zsj_ir"/>
             <arg name="mavlink_udp_port" value="14594"/>
@@ -347,8 +347,8 @@
         <arg name="ID" value="15"/>
         <arg name="fcu_url" default="udp://:10555@localhost:14595"/>
         <include file="$(find px4)/launch/single_vehicle_spawn.launch">
-            <arg name="x" value="1.00"/>
-            <arg name="y" value="-1.00"/>
+            <arg name="x" value="7.00"/>
+            <arg name="y" value="-5.00"/>
             <arg name="z" value="0.50"/>
             <arg name="vehicle" value="iris_zsj_ir"/>
             <arg name="mavlink_udp_port" value="14595"/>
@@ -368,8 +368,8 @@
         <arg name="ID" value="16"/>
         <arg name="fcu_url" default="udp://:10556@localhost:14596"/>
         <include file="$(find px4)/launch/single_vehicle_spawn.launch">
-            <arg name="x" value="3.00"/>
-            <arg name="y" value="-1.00"/>
+            <arg name="x" value="-7.00"/>
+            <arg name="y" value="-3.00"/>
             <arg name="z" value="0.50"/>
             <arg name="vehicle" value="iris_zsj_ir"/>
             <arg name="mavlink_udp_port" value="14596"/>
@@ -389,8 +389,8 @@
         <arg name="ID" value="17"/>
         <arg name="fcu_url" default="udp://:10557@localhost:14597"/>
         <include file="$(find px4)/launch/single_vehicle_spawn.launch">
-            <arg name="x" value="5.00"/>
-            <arg name="y" value="-1.00"/>
+            <arg name="x" value="-5.00"/>
+            <arg name="y" value="-3.00"/>
             <arg name="z" value="0.50"/>
             <arg name="vehicle" value="iris_zsj_ir"/>
             <arg name="mavlink_udp_port" value="14597"/>
@@ -410,8 +410,8 @@
         <arg name="ID" value="18"/>
         <arg name="fcu_url" default="udp://:10558@localhost:14598"/>
         <include file="$(find px4)/launch/single_vehicle_spawn.launch">
-            <arg name="x" value="-5.00"/>
-            <arg name="y" value="1.00"/>
+            <arg name="x" value="-3.00"/>
+            <arg name="y" value="-3.00"/>
             <arg name="z" value="0.50"/>
             <arg name="vehicle" value="iris_zsj_ir"/>
             <arg name="mavlink_udp_port" value="14598"/>
@@ -431,8 +431,8 @@
         <arg name="ID" value="19"/>
         <arg name="fcu_url" default="udp://:10559@localhost:14599"/>
         <include file="$(find px4)/launch/single_vehicle_spawn.launch">
-            <arg name="x" value="-3.00"/>
-            <arg name="y" value="1.00"/>
+            <arg name="x" value="-1.00"/>
+            <arg name="y" value="-3.00"/>
             <arg name="z" value="0.50"/>
             <arg name="vehicle" value="iris_zsj_ir"/>
             <arg name="mavlink_udp_port" value="14599"/>
@@ -452,8 +452,8 @@
         <arg name="ID" value="20"/>
         <arg name="fcu_url" default="udp://:10560@localhost:14600"/>
         <include file="$(find px4)/launch/single_vehicle_spawn.launch">
-            <arg name="x" value="-1.00"/>
-            <arg name="y" value="1.00"/>
+            <arg name="x" value="1.00"/>
+            <arg name="y" value="-3.00"/>
             <arg name="z" value="0.50"/>
             <arg name="vehicle" value="iris_zsj_ir"/>
             <arg name="mavlink_udp_port" value="14600"/>
@@ -473,8 +473,8 @@
         <arg name="ID" value="21"/>
         <arg name="fcu_url" default="udp://:10561@localhost:14601"/>
         <include file="$(find px4)/launch/single_vehicle_spawn.launch">
-            <arg name="x" value="1.00"/>
-            <arg name="y" value="1.00"/>
+            <arg name="x" value="3.00"/>
+            <arg name="y" value="-3.00"/>
             <arg name="z" value="0.50"/>
             <arg name="vehicle" value="iris_zsj_ir"/>
             <arg name="mavlink_udp_port" value="14601"/>
@@ -494,8 +494,8 @@
         <arg name="ID" value="22"/>
         <arg name="fcu_url" default="udp://:10562@localhost:14602"/>
         <include file="$(find px4)/launch/single_vehicle_spawn.launch">
-            <arg name="x" value="3.00"/>
-            <arg name="y" value="1.00"/>
+            <arg name="x" value="5.00"/>
+            <arg name="y" value="-3.00"/>
             <arg name="z" value="0.50"/>
             <arg name="vehicle" value="iris_zsj_ir"/>
             <arg name="mavlink_udp_port" value="14602"/>
@@ -515,8 +515,8 @@
         <arg name="ID" value="23"/>
         <arg name="fcu_url" default="udp://:10563@localhost:14603"/>
         <include file="$(find px4)/launch/single_vehicle_spawn.launch">
-            <arg name="x" value="5.00"/>
-            <arg name="y" value="1.00"/>
+            <arg name="x" value="7.00"/>
+            <arg name="y" value="-3.00"/>
             <arg name="z" value="0.50"/>
             <arg name="vehicle" value="iris_zsj_ir"/>
             <arg name="mavlink_udp_port" value="14603"/>
@@ -536,8 +536,8 @@
         <arg name="ID" value="24"/>
         <arg name="fcu_url" default="udp://:10564@localhost:14604"/>
         <include file="$(find px4)/launch/single_vehicle_spawn.launch">
-            <arg name="x" value="-5.00"/>
-            <arg name="y" value="3.00"/>
+            <arg name="x" value="-7.00"/>
+            <arg name="y" value="-1.00"/>
             <arg name="z" value="0.50"/>
             <arg name="vehicle" value="iris_zsj_ir"/>
             <arg name="mavlink_udp_port" value="14604"/>
@@ -557,8 +557,8 @@
         <arg name="ID" value="25"/>
         <arg name="fcu_url" default="udp://:10565@localhost:14605"/>
         <include file="$(find px4)/launch/single_vehicle_spawn.launch">
-            <arg name="x" value="-3.00"/>
-            <arg name="y" value="3.00"/>
+            <arg name="x" value="-5.00"/>
+            <arg name="y" value="-1.00"/>
             <arg name="z" value="0.50"/>
             <arg name="vehicle" value="iris_zsj_ir"/>
             <arg name="mavlink_udp_port" value="14605"/>
@@ -578,8 +578,8 @@
         <arg name="ID" value="26"/>
         <arg name="fcu_url" default="udp://:10566@localhost:14606"/>
         <include file="$(find px4)/launch/single_vehicle_spawn.launch">
-            <arg name="x" value="-1.00"/>
-            <arg name="y" value="3.00"/>
+            <arg name="x" value="-3.00"/>
+            <arg name="y" value="-1.00"/>
             <arg name="z" value="0.50"/>
             <arg name="vehicle" value="iris_zsj_ir"/>
             <arg name="mavlink_udp_port" value="14606"/>
@@ -599,8 +599,8 @@
         <arg name="ID" value="27"/>
         <arg name="fcu_url" default="udp://:10567@localhost:14607"/>
         <include file="$(find px4)/launch/single_vehicle_spawn.launch">
-            <arg name="x" value="1.00"/>
-            <arg name="y" value="3.00"/>
+            <arg name="x" value="-1.00"/>
+            <arg name="y" value="-1.00"/>
             <arg name="z" value="0.50"/>
             <arg name="vehicle" value="iris_zsj_ir"/>
             <arg name="mavlink_udp_port" value="14607"/>
@@ -620,8 +620,8 @@
         <arg name="ID" value="28"/>
         <arg name="fcu_url" default="udp://:10568@localhost:14608"/>
         <include file="$(find px4)/launch/single_vehicle_spawn.launch">
-            <arg name="x" value="3.00"/>
-            <arg name="y" value="3.00"/>
+            <arg name="x" value="1.00"/>
+            <arg name="y" value="-1.00"/>
             <arg name="z" value="0.50"/>
             <arg name="vehicle" value="iris_zsj_ir"/>
             <arg name="mavlink_udp_port" value="14608"/>
@@ -641,8 +641,8 @@
         <arg name="ID" value="29"/>
         <arg name="fcu_url" default="udp://:10569@localhost:14609"/>
         <include file="$(find px4)/launch/single_vehicle_spawn.launch">
-            <arg name="x" value="5.00"/>
-            <arg name="y" value="3.00"/>
+            <arg name="x" value="3.00"/>
+            <arg name="y" value="-1.00"/>
             <arg name="z" value="0.50"/>
             <arg name="vehicle" value="iris_zsj_ir"/>
             <arg name="mavlink_udp_port" value="14609"/>
@@ -662,8 +662,8 @@
         <arg name="ID" value="30"/>
         <arg name="fcu_url" default="udp://:10570@localhost:14610"/>
         <include file="$(find px4)/launch/single_vehicle_spawn.launch">
-            <arg name="x" value="-5.00"/>
-            <arg name="y" value="5.00"/>
+            <arg name="x" value="5.00"/>
+            <arg name="y" value="-1.00"/>
             <arg name="z" value="0.50"/>
             <arg name="vehicle" value="iris_zsj_ir"/>
             <arg name="mavlink_udp_port" value="14610"/>
@@ -683,8 +683,8 @@
         <arg name="ID" value="31"/>
         <arg name="fcu_url" default="udp://:10571@localhost:14611"/>
         <include file="$(find px4)/launch/single_vehicle_spawn.launch">
-            <arg name="x" value="-3.00"/>
-            <arg name="y" value="5.00"/>
+            <arg name="x" value="7.00"/>
+            <arg name="y" value="-1.00"/>
             <arg name="z" value="0.50"/>
             <arg name="vehicle" value="iris_zsj_ir"/>
             <arg name="mavlink_udp_port" value="14611"/>
@@ -704,8 +704,8 @@
         <arg name="ID" value="32"/>
         <arg name="fcu_url" default="udp://:10572@localhost:14612"/>
         <include file="$(find px4)/launch/single_vehicle_spawn.launch">
-            <arg name="x" value="-1.00"/>
-            <arg name="y" value="5.00"/>
+            <arg name="x" value="-7.00"/>
+            <arg name="y" value="1.00"/>
             <arg name="z" value="0.50"/>
             <arg name="vehicle" value="iris_zsj_ir"/>
             <arg name="mavlink_udp_port" value="14612"/>
@@ -725,8 +725,8 @@
         <arg name="ID" value="33"/>
         <arg name="fcu_url" default="udp://:10573@localhost:14613"/>
         <include file="$(find px4)/launch/single_vehicle_spawn.launch">
-            <arg name="x" value="1.00"/>
-            <arg name="y" value="5.00"/>
+            <arg name="x" value="-5.00"/>
+            <arg name="y" value="1.00"/>
             <arg name="z" value="0.50"/>
             <arg name="vehicle" value="iris_zsj_ir"/>
             <arg name="mavlink_udp_port" value="14613"/>
@@ -746,8 +746,8 @@
         <arg name="ID" value="34"/>
         <arg name="fcu_url" default="udp://:10574@localhost:14614"/>
         <include file="$(find px4)/launch/single_vehicle_spawn.launch">
-            <arg name="x" value="3.00"/>
-            <arg name="y" value="5.00"/>
+            <arg name="x" value="-3.00"/>
+            <arg name="y" value="1.00"/>
             <arg name="z" value="0.50"/>
             <arg name="vehicle" value="iris_zsj_ir"/>
             <arg name="mavlink_udp_port" value="14614"/>
@@ -767,12 +767,600 @@
         <arg name="ID" value="35"/>
         <arg name="fcu_url" default="udp://:10575@localhost:14615"/>
         <include file="$(find px4)/launch/single_vehicle_spawn.launch">
-            <arg name="x" value="5.00"/>
-            <arg name="y" value="5.00"/>
+            <arg name="x" value="-1.00"/>
+            <arg name="y" value="1.00"/>
             <arg name="z" value="0.50"/>
             <arg name="vehicle" value="iris_zsj_ir"/>
             <arg name="mavlink_udp_port" value="14615"/>
             <arg name="mavlink_tcp_port" value="4595"/>
+            <arg name="ID" value="$(arg ID)"/>
+        </include>
+
+        <include file="$(find mavros)/launch/px4.launch">
+            <arg name="fcu_url" value="$(arg fcu_url)"/>
+            <arg name="gcs_url" value=""/>
+            <arg name="tgt_system" value="$(eval 1 + arg('ID'))"/>
+            <arg name="tgt_component" value="1"/>
+        </include>
+    </group>
+    <!-- 第37架无人机 -->
+    <group ns="iris_zsj_ir36">
+        <arg name="ID" value="36"/>
+        <arg name="fcu_url" default="udp://:10576@localhost:14616"/>
+        <include file="$(find px4)/launch/single_vehicle_spawn.launch">
+            <arg name="x" value="1.00"/>
+            <arg name="y" value="1.00"/>
+            <arg name="z" value="0.50"/>
+            <arg name="vehicle" value="iris_zsj_ir"/>
+            <arg name="mavlink_udp_port" value="14616"/>
+            <arg name="mavlink_tcp_port" value="4596"/>
+            <arg name="ID" value="$(arg ID)"/>
+        </include>
+
+        <include file="$(find mavros)/launch/px4.launch">
+            <arg name="fcu_url" value="$(arg fcu_url)"/>
+            <arg name="gcs_url" value=""/>
+            <arg name="tgt_system" value="$(eval 1 + arg('ID'))"/>
+            <arg name="tgt_component" value="1"/>
+        </include>
+    </group>
+    <!-- 第38架无人机 -->
+    <group ns="iris_zsj_ir37">
+        <arg name="ID" value="37"/>
+        <arg name="fcu_url" default="udp://:10577@localhost:14617"/>
+        <include file="$(find px4)/launch/single_vehicle_spawn.launch">
+            <arg name="x" value="3.00"/>
+            <arg name="y" value="1.00"/>
+            <arg name="z" value="0.50"/>
+            <arg name="vehicle" value="iris_zsj_ir"/>
+            <arg name="mavlink_udp_port" value="14617"/>
+            <arg name="mavlink_tcp_port" value="4597"/>
+            <arg name="ID" value="$(arg ID)"/>
+        </include>
+
+        <include file="$(find mavros)/launch/px4.launch">
+            <arg name="fcu_url" value="$(arg fcu_url)"/>
+            <arg name="gcs_url" value=""/>
+            <arg name="tgt_system" value="$(eval 1 + arg('ID'))"/>
+            <arg name="tgt_component" value="1"/>
+        </include>
+    </group>
+    <!-- 第39架无人机 -->
+    <group ns="iris_zsj_ir38">
+        <arg name="ID" value="38"/>
+        <arg name="fcu_url" default="udp://:10578@localhost:14618"/>
+        <include file="$(find px4)/launch/single_vehicle_spawn.launch">
+            <arg name="x" value="5.00"/>
+            <arg name="y" value="1.00"/>
+            <arg name="z" value="0.50"/>
+            <arg name="vehicle" value="iris_zsj_ir"/>
+            <arg name="mavlink_udp_port" value="14618"/>
+            <arg name="mavlink_tcp_port" value="4598"/>
+            <arg name="ID" value="$(arg ID)"/>
+        </include>
+
+        <include file="$(find mavros)/launch/px4.launch">
+            <arg name="fcu_url" value="$(arg fcu_url)"/>
+            <arg name="gcs_url" value=""/>
+            <arg name="tgt_system" value="$(eval 1 + arg('ID'))"/>
+            <arg name="tgt_component" value="1"/>
+        </include>
+    </group>
+    <!-- 第40架无人机 -->
+    <group ns="iris_zsj_ir39">
+        <arg name="ID" value="39"/>
+        <arg name="fcu_url" default="udp://:10579@localhost:14619"/>
+        <include file="$(find px4)/launch/single_vehicle_spawn.launch">
+            <arg name="x" value="7.00"/>
+            <arg name="y" value="1.00"/>
+            <arg name="z" value="0.50"/>
+            <arg name="vehicle" value="iris_zsj_ir"/>
+            <arg name="mavlink_udp_port" value="14619"/>
+            <arg name="mavlink_tcp_port" value="4599"/>
+            <arg name="ID" value="$(arg ID)"/>
+        </include>
+
+        <include file="$(find mavros)/launch/px4.launch">
+            <arg name="fcu_url" value="$(arg fcu_url)"/>
+            <arg name="gcs_url" value=""/>
+            <arg name="tgt_system" value="$(eval 1 + arg('ID'))"/>
+            <arg name="tgt_component" value="1"/>
+        </include>
+    </group>
+    <!-- 第41架无人机 -->
+    <group ns="iris_zsj_ir40">
+        <arg name="ID" value="40"/>
+        <arg name="fcu_url" default="udp://:10580@localhost:14620"/>
+        <include file="$(find px4)/launch/single_vehicle_spawn.launch">
+            <arg name="x" value="-7.00"/>
+            <arg name="y" value="3.00"/>
+            <arg name="z" value="0.50"/>
+            <arg name="vehicle" value="iris_zsj_ir"/>
+            <arg name="mavlink_udp_port" value="14620"/>
+            <arg name="mavlink_tcp_port" value="4600"/>
+            <arg name="ID" value="$(arg ID)"/>
+        </include>
+
+        <include file="$(find mavros)/launch/px4.launch">
+            <arg name="fcu_url" value="$(arg fcu_url)"/>
+            <arg name="gcs_url" value=""/>
+            <arg name="tgt_system" value="$(eval 1 + arg('ID'))"/>
+            <arg name="tgt_component" value="1"/>
+        </include>
+    </group>
+    <!-- 第42架无人机 -->
+    <group ns="iris_zsj_ir41">
+        <arg name="ID" value="41"/>
+        <arg name="fcu_url" default="udp://:10581@localhost:14621"/>
+        <include file="$(find px4)/launch/single_vehicle_spawn.launch">
+            <arg name="x" value="-5.00"/>
+            <arg name="y" value="3.00"/>
+            <arg name="z" value="0.50"/>
+            <arg name="vehicle" value="iris_zsj_ir"/>
+            <arg name="mavlink_udp_port" value="14621"/>
+            <arg name="mavlink_tcp_port" value="4601"/>
+            <arg name="ID" value="$(arg ID)"/>
+        </include>
+
+        <include file="$(find mavros)/launch/px4.launch">
+            <arg name="fcu_url" value="$(arg fcu_url)"/>
+            <arg name="gcs_url" value=""/>
+            <arg name="tgt_system" value="$(eval 1 + arg('ID'))"/>
+            <arg name="tgt_component" value="1"/>
+        </include>
+    </group>
+    <!-- 第43架无人机 -->
+    <group ns="iris_zsj_ir42">
+        <arg name="ID" value="42"/>
+        <arg name="fcu_url" default="udp://:10582@localhost:14622"/>
+        <include file="$(find px4)/launch/single_vehicle_spawn.launch">
+            <arg name="x" value="-3.00"/>
+            <arg name="y" value="3.00"/>
+            <arg name="z" value="0.50"/>
+            <arg name="vehicle" value="iris_zsj_ir"/>
+            <arg name="mavlink_udp_port" value="14622"/>
+            <arg name="mavlink_tcp_port" value="4602"/>
+            <arg name="ID" value="$(arg ID)"/>
+        </include>
+
+        <include file="$(find mavros)/launch/px4.launch">
+            <arg name="fcu_url" value="$(arg fcu_url)"/>
+            <arg name="gcs_url" value=""/>
+            <arg name="tgt_system" value="$(eval 1 + arg('ID'))"/>
+            <arg name="tgt_component" value="1"/>
+        </include>
+    </group>
+    <!-- 第44架无人机 -->
+    <group ns="iris_zsj_ir43">
+        <arg name="ID" value="43"/>
+        <arg name="fcu_url" default="udp://:10583@localhost:14623"/>
+        <include file="$(find px4)/launch/single_vehicle_spawn.launch">
+            <arg name="x" value="-1.00"/>
+            <arg name="y" value="3.00"/>
+            <arg name="z" value="0.50"/>
+            <arg name="vehicle" value="iris_zsj_ir"/>
+            <arg name="mavlink_udp_port" value="14623"/>
+            <arg name="mavlink_tcp_port" value="4603"/>
+            <arg name="ID" value="$(arg ID)"/>
+        </include>
+
+        <include file="$(find mavros)/launch/px4.launch">
+            <arg name="fcu_url" value="$(arg fcu_url)"/>
+            <arg name="gcs_url" value=""/>
+            <arg name="tgt_system" value="$(eval 1 + arg('ID'))"/>
+            <arg name="tgt_component" value="1"/>
+        </include>
+    </group>
+    <!-- 第45架无人机 -->
+    <group ns="iris_zsj_ir44">
+        <arg name="ID" value="44"/>
+        <arg name="fcu_url" default="udp://:10584@localhost:14624"/>
+        <include file="$(find px4)/launch/single_vehicle_spawn.launch">
+            <arg name="x" value="1.00"/>
+            <arg name="y" value="3.00"/>
+            <arg name="z" value="0.50"/>
+            <arg name="vehicle" value="iris_zsj_ir"/>
+            <arg name="mavlink_udp_port" value="14624"/>
+            <arg name="mavlink_tcp_port" value="4604"/>
+            <arg name="ID" value="$(arg ID)"/>
+        </include>
+
+        <include file="$(find mavros)/launch/px4.launch">
+            <arg name="fcu_url" value="$(arg fcu_url)"/>
+            <arg name="gcs_url" value=""/>
+            <arg name="tgt_system" value="$(eval 1 + arg('ID'))"/>
+            <arg name="tgt_component" value="1"/>
+        </include>
+    </group>
+    <!-- 第46架无人机 -->
+    <group ns="iris_zsj_ir45">
+        <arg name="ID" value="45"/>
+        <arg name="fcu_url" default="udp://:10585@localhost:14625"/>
+        <include file="$(find px4)/launch/single_vehicle_spawn.launch">
+            <arg name="x" value="3.00"/>
+            <arg name="y" value="3.00"/>
+            <arg name="z" value="0.50"/>
+            <arg name="vehicle" value="iris_zsj_ir"/>
+            <arg name="mavlink_udp_port" value="14625"/>
+            <arg name="mavlink_tcp_port" value="4605"/>
+            <arg name="ID" value="$(arg ID)"/>
+        </include>
+
+        <include file="$(find mavros)/launch/px4.launch">
+            <arg name="fcu_url" value="$(arg fcu_url)"/>
+            <arg name="gcs_url" value=""/>
+            <arg name="tgt_system" value="$(eval 1 + arg('ID'))"/>
+            <arg name="tgt_component" value="1"/>
+        </include>
+    </group>
+    <!-- 第47架无人机 -->
+    <group ns="iris_zsj_ir46">
+        <arg name="ID" value="46"/>
+        <arg name="fcu_url" default="udp://:10586@localhost:14626"/>
+        <include file="$(find px4)/launch/single_vehicle_spawn.launch">
+            <arg name="x" value="5.00"/>
+            <arg name="y" value="3.00"/>
+            <arg name="z" value="0.50"/>
+            <arg name="vehicle" value="iris_zsj_ir"/>
+            <arg name="mavlink_udp_port" value="14626"/>
+            <arg name="mavlink_tcp_port" value="4606"/>
+            <arg name="ID" value="$(arg ID)"/>
+        </include>
+
+        <include file="$(find mavros)/launch/px4.launch">
+            <arg name="fcu_url" value="$(arg fcu_url)"/>
+            <arg name="gcs_url" value=""/>
+            <arg name="tgt_system" value="$(eval 1 + arg('ID'))"/>
+            <arg name="tgt_component" value="1"/>
+        </include>
+    </group>
+    <!-- 第48架无人机 -->
+    <group ns="iris_zsj_ir47">
+        <arg name="ID" value="47"/>
+        <arg name="fcu_url" default="udp://:10587@localhost:14627"/>
+        <include file="$(find px4)/launch/single_vehicle_spawn.launch">
+            <arg name="x" value="7.00"/>
+            <arg name="y" value="3.00"/>
+            <arg name="z" value="0.50"/>
+            <arg name="vehicle" value="iris_zsj_ir"/>
+            <arg name="mavlink_udp_port" value="14627"/>
+            <arg name="mavlink_tcp_port" value="4607"/>
+            <arg name="ID" value="$(arg ID)"/>
+        </include>
+
+        <include file="$(find mavros)/launch/px4.launch">
+            <arg name="fcu_url" value="$(arg fcu_url)"/>
+            <arg name="gcs_url" value=""/>
+            <arg name="tgt_system" value="$(eval 1 + arg('ID'))"/>
+            <arg name="tgt_component" value="1"/>
+        </include>
+    </group>
+    <!-- 第49架无人机 -->
+    <group ns="iris_zsj_ir48">
+        <arg name="ID" value="48"/>
+        <arg name="fcu_url" default="udp://:10588@localhost:14628"/>
+        <include file="$(find px4)/launch/single_vehicle_spawn.launch">
+            <arg name="x" value="-7.00"/>
+            <arg name="y" value="5.00"/>
+            <arg name="z" value="0.50"/>
+            <arg name="vehicle" value="iris_zsj_ir"/>
+            <arg name="mavlink_udp_port" value="14628"/>
+            <arg name="mavlink_tcp_port" value="4608"/>
+            <arg name="ID" value="$(arg ID)"/>
+        </include>
+
+        <include file="$(find mavros)/launch/px4.launch">
+            <arg name="fcu_url" value="$(arg fcu_url)"/>
+            <arg name="gcs_url" value=""/>
+            <arg name="tgt_system" value="$(eval 1 + arg('ID'))"/>
+            <arg name="tgt_component" value="1"/>
+        </include>
+    </group>
+    <!-- 第50架无人机 -->
+    <group ns="iris_zsj_ir49">
+        <arg name="ID" value="49"/>
+        <arg name="fcu_url" default="udp://:10589@localhost:14629"/>
+        <include file="$(find px4)/launch/single_vehicle_spawn.launch">
+            <arg name="x" value="-5.00"/>
+            <arg name="y" value="5.00"/>
+            <arg name="z" value="0.50"/>
+            <arg name="vehicle" value="iris_zsj_ir"/>
+            <arg name="mavlink_udp_port" value="14629"/>
+            <arg name="mavlink_tcp_port" value="4609"/>
+            <arg name="ID" value="$(arg ID)"/>
+        </include>
+
+        <include file="$(find mavros)/launch/px4.launch">
+            <arg name="fcu_url" value="$(arg fcu_url)"/>
+            <arg name="gcs_url" value=""/>
+            <arg name="tgt_system" value="$(eval 1 + arg('ID'))"/>
+            <arg name="tgt_component" value="1"/>
+        </include>
+    </group>
+    <!-- 第51架无人机 -->
+    <group ns="iris_zsj_ir50">
+        <arg name="ID" value="50"/>
+        <arg name="fcu_url" default="udp://:10590@localhost:14630"/>
+        <include file="$(find px4)/launch/single_vehicle_spawn.launch">
+            <arg name="x" value="-3.00"/>
+            <arg name="y" value="5.00"/>
+            <arg name="z" value="0.50"/>
+            <arg name="vehicle" value="iris_zsj_ir"/>
+            <arg name="mavlink_udp_port" value="14630"/>
+            <arg name="mavlink_tcp_port" value="4610"/>
+            <arg name="ID" value="$(arg ID)"/>
+        </include>
+
+        <include file="$(find mavros)/launch/px4.launch">
+            <arg name="fcu_url" value="$(arg fcu_url)"/>
+            <arg name="gcs_url" value=""/>
+            <arg name="tgt_system" value="$(eval 1 + arg('ID'))"/>
+            <arg name="tgt_component" value="1"/>
+        </include>
+    </group>
+    <!-- 第52架无人机 -->
+    <group ns="iris_zsj_ir51">
+        <arg name="ID" value="51"/>
+        <arg name="fcu_url" default="udp://:10591@localhost:14631"/>
+        <include file="$(find px4)/launch/single_vehicle_spawn.launch">
+            <arg name="x" value="-1.00"/>
+            <arg name="y" value="5.00"/>
+            <arg name="z" value="0.50"/>
+            <arg name="vehicle" value="iris_zsj_ir"/>
+            <arg name="mavlink_udp_port" value="14631"/>
+            <arg name="mavlink_tcp_port" value="4611"/>
+            <arg name="ID" value="$(arg ID)"/>
+        </include>
+
+        <include file="$(find mavros)/launch/px4.launch">
+            <arg name="fcu_url" value="$(arg fcu_url)"/>
+            <arg name="gcs_url" value=""/>
+            <arg name="tgt_system" value="$(eval 1 + arg('ID'))"/>
+            <arg name="tgt_component" value="1"/>
+        </include>
+    </group>
+    <!-- 第53架无人机 -->
+    <group ns="iris_zsj_ir52">
+        <arg name="ID" value="52"/>
+        <arg name="fcu_url" default="udp://:10592@localhost:14632"/>
+        <include file="$(find px4)/launch/single_vehicle_spawn.launch">
+            <arg name="x" value="1.00"/>
+            <arg name="y" value="5.00"/>
+            <arg name="z" value="0.50"/>
+            <arg name="vehicle" value="iris_zsj_ir"/>
+            <arg name="mavlink_udp_port" value="14632"/>
+            <arg name="mavlink_tcp_port" value="4612"/>
+            <arg name="ID" value="$(arg ID)"/>
+        </include>
+
+        <include file="$(find mavros)/launch/px4.launch">
+            <arg name="fcu_url" value="$(arg fcu_url)"/>
+            <arg name="gcs_url" value=""/>
+            <arg name="tgt_system" value="$(eval 1 + arg('ID'))"/>
+            <arg name="tgt_component" value="1"/>
+        </include>
+    </group>
+    <!-- 第54架无人机 -->
+    <group ns="iris_zsj_ir53">
+        <arg name="ID" value="53"/>
+        <arg name="fcu_url" default="udp://:10593@localhost:14633"/>
+        <include file="$(find px4)/launch/single_vehicle_spawn.launch">
+            <arg name="x" value="3.00"/>
+            <arg name="y" value="5.00"/>
+            <arg name="z" value="0.50"/>
+            <arg name="vehicle" value="iris_zsj_ir"/>
+            <arg name="mavlink_udp_port" value="14633"/>
+            <arg name="mavlink_tcp_port" value="4613"/>
+            <arg name="ID" value="$(arg ID)"/>
+        </include>
+
+        <include file="$(find mavros)/launch/px4.launch">
+            <arg name="fcu_url" value="$(arg fcu_url)"/>
+            <arg name="gcs_url" value=""/>
+            <arg name="tgt_system" value="$(eval 1 + arg('ID'))"/>
+            <arg name="tgt_component" value="1"/>
+        </include>
+    </group>
+    <!-- 第55架无人机 -->
+    <group ns="iris_zsj_ir54">
+        <arg name="ID" value="54"/>
+        <arg name="fcu_url" default="udp://:10594@localhost:14634"/>
+        <include file="$(find px4)/launch/single_vehicle_spawn.launch">
+            <arg name="x" value="5.00"/>
+            <arg name="y" value="5.00"/>
+            <arg name="z" value="0.50"/>
+            <arg name="vehicle" value="iris_zsj_ir"/>
+            <arg name="mavlink_udp_port" value="14634"/>
+            <arg name="mavlink_tcp_port" value="4614"/>
+            <arg name="ID" value="$(arg ID)"/>
+        </include>
+
+        <include file="$(find mavros)/launch/px4.launch">
+            <arg name="fcu_url" value="$(arg fcu_url)"/>
+            <arg name="gcs_url" value=""/>
+            <arg name="tgt_system" value="$(eval 1 + arg('ID'))"/>
+            <arg name="tgt_component" value="1"/>
+        </include>
+    </group>
+    <!-- 第56架无人机 -->
+    <group ns="iris_zsj_ir55">
+        <arg name="ID" value="55"/>
+        <arg name="fcu_url" default="udp://:10595@localhost:14635"/>
+        <include file="$(find px4)/launch/single_vehicle_spawn.launch">
+            <arg name="x" value="7.00"/>
+            <arg name="y" value="5.00"/>
+            <arg name="z" value="0.50"/>
+            <arg name="vehicle" value="iris_zsj_ir"/>
+            <arg name="mavlink_udp_port" value="14635"/>
+            <arg name="mavlink_tcp_port" value="4615"/>
+            <arg name="ID" value="$(arg ID)"/>
+        </include>
+
+        <include file="$(find mavros)/launch/px4.launch">
+            <arg name="fcu_url" value="$(arg fcu_url)"/>
+            <arg name="gcs_url" value=""/>
+            <arg name="tgt_system" value="$(eval 1 + arg('ID'))"/>
+            <arg name="tgt_component" value="1"/>
+        </include>
+    </group>
+    <!-- 第57架无人机 -->
+    <group ns="iris_zsj_ir56">
+        <arg name="ID" value="56"/>
+        <arg name="fcu_url" default="udp://:10596@localhost:14636"/>
+        <include file="$(find px4)/launch/single_vehicle_spawn.launch">
+            <arg name="x" value="-7.00"/>
+            <arg name="y" value="7.00"/>
+            <arg name="z" value="0.50"/>
+            <arg name="vehicle" value="iris_zsj_ir"/>
+            <arg name="mavlink_udp_port" value="14636"/>
+            <arg name="mavlink_tcp_port" value="4616"/>
+            <arg name="ID" value="$(arg ID)"/>
+        </include>
+
+        <include file="$(find mavros)/launch/px4.launch">
+            <arg name="fcu_url" value="$(arg fcu_url)"/>
+            <arg name="gcs_url" value=""/>
+            <arg name="tgt_system" value="$(eval 1 + arg('ID'))"/>
+            <arg name="tgt_component" value="1"/>
+        </include>
+    </group>
+    <!-- 第58架无人机 -->
+    <group ns="iris_zsj_ir57">
+        <arg name="ID" value="57"/>
+        <arg name="fcu_url" default="udp://:10597@localhost:14637"/>
+        <include file="$(find px4)/launch/single_vehicle_spawn.launch">
+            <arg name="x" value="-5.00"/>
+            <arg name="y" value="7.00"/>
+            <arg name="z" value="0.50"/>
+            <arg name="vehicle" value="iris_zsj_ir"/>
+            <arg name="mavlink_udp_port" value="14637"/>
+            <arg name="mavlink_tcp_port" value="4617"/>
+            <arg name="ID" value="$(arg ID)"/>
+        </include>
+
+        <include file="$(find mavros)/launch/px4.launch">
+            <arg name="fcu_url" value="$(arg fcu_url)"/>
+            <arg name="gcs_url" value=""/>
+            <arg name="tgt_system" value="$(eval 1 + arg('ID'))"/>
+            <arg name="tgt_component" value="1"/>
+        </include>
+    </group>
+    <!-- 第59架无人机 -->
+    <group ns="iris_zsj_ir58">
+        <arg name="ID" value="58"/>
+        <arg name="fcu_url" default="udp://:10598@localhost:14638"/>
+        <include file="$(find px4)/launch/single_vehicle_spawn.launch">
+            <arg name="x" value="-3.00"/>
+            <arg name="y" value="7.00"/>
+            <arg name="z" value="0.50"/>
+            <arg name="vehicle" value="iris_zsj_ir"/>
+            <arg name="mavlink_udp_port" value="14638"/>
+            <arg name="mavlink_tcp_port" value="4618"/>
+            <arg name="ID" value="$(arg ID)"/>
+        </include>
+
+        <include file="$(find mavros)/launch/px4.launch">
+            <arg name="fcu_url" value="$(arg fcu_url)"/>
+            <arg name="gcs_url" value=""/>
+            <arg name="tgt_system" value="$(eval 1 + arg('ID'))"/>
+            <arg name="tgt_component" value="1"/>
+        </include>
+    </group>
+    <!-- 第60架无人机 -->
+    <group ns="iris_zsj_ir59">
+        <arg name="ID" value="59"/>
+        <arg name="fcu_url" default="udp://:10599@localhost:14639"/>
+        <include file="$(find px4)/launch/single_vehicle_spawn.launch">
+            <arg name="x" value="-1.00"/>
+            <arg name="y" value="7.00"/>
+            <arg name="z" value="0.50"/>
+            <arg name="vehicle" value="iris_zsj_ir"/>
+            <arg name="mavlink_udp_port" value="14639"/>
+            <arg name="mavlink_tcp_port" value="4619"/>
+            <arg name="ID" value="$(arg ID)"/>
+        </include>
+
+        <include file="$(find mavros)/launch/px4.launch">
+            <arg name="fcu_url" value="$(arg fcu_url)"/>
+            <arg name="gcs_url" value=""/>
+            <arg name="tgt_system" value="$(eval 1 + arg('ID'))"/>
+            <arg name="tgt_component" value="1"/>
+        </include>
+    </group>
+    <!-- 第61架无人机 -->
+    <group ns="iris_zsj_ir60">
+        <arg name="ID" value="60"/>
+        <arg name="fcu_url" default="udp://:10600@localhost:14640"/>
+        <include file="$(find px4)/launch/single_vehicle_spawn.launch">
+            <arg name="x" value="1.00"/>
+            <arg name="y" value="7.00"/>
+            <arg name="z" value="0.50"/>
+            <arg name="vehicle" value="iris_zsj_ir"/>
+            <arg name="mavlink_udp_port" value="14640"/>
+            <arg name="mavlink_tcp_port" value="4620"/>
+            <arg name="ID" value="$(arg ID)"/>
+        </include>
+
+        <include file="$(find mavros)/launch/px4.launch">
+            <arg name="fcu_url" value="$(arg fcu_url)"/>
+            <arg name="gcs_url" value=""/>
+            <arg name="tgt_system" value="$(eval 1 + arg('ID'))"/>
+            <arg name="tgt_component" value="1"/>
+        </include>
+    </group>
+    <!-- 第62架无人机 -->
+    <group ns="iris_zsj_ir61">
+        <arg name="ID" value="61"/>
+        <arg name="fcu_url" default="udp://:10601@localhost:14641"/>
+        <include file="$(find px4)/launch/single_vehicle_spawn.launch">
+            <arg name="x" value="3.00"/>
+            <arg name="y" value="7.00"/>
+            <arg name="z" value="0.50"/>
+            <arg name="vehicle" value="iris_zsj_ir"/>
+            <arg name="mavlink_udp_port" value="14641"/>
+            <arg name="mavlink_tcp_port" value="4621"/>
+            <arg name="ID" value="$(arg ID)"/>
+        </include>
+
+        <include file="$(find mavros)/launch/px4.launch">
+            <arg name="fcu_url" value="$(arg fcu_url)"/>
+            <arg name="gcs_url" value=""/>
+            <arg name="tgt_system" value="$(eval 1 + arg('ID'))"/>
+            <arg name="tgt_component" value="1"/>
+        </include>
+    </group>
+    <!-- 第63架无人机 -->
+    <group ns="iris_zsj_ir62">
+        <arg name="ID" value="62"/>
+        <arg name="fcu_url" default="udp://:10602@localhost:14642"/>
+        <include file="$(find px4)/launch/single_vehicle_spawn.launch">
+            <arg name="x" value="5.00"/>
+            <arg name="y" value="7.00"/>
+            <arg name="z" value="0.50"/>
+            <arg name="vehicle" value="iris_zsj_ir"/>
+            <arg name="mavlink_udp_port" value="14642"/>
+            <arg name="mavlink_tcp_port" value="4622"/>
+            <arg name="ID" value="$(arg ID)"/>
+        </include>
+
+        <include file="$(find mavros)/launch/px4.launch">
+            <arg name="fcu_url" value="$(arg fcu_url)"/>
+            <arg name="gcs_url" value=""/>
+            <arg name="tgt_system" value="$(eval 1 + arg('ID'))"/>
+            <arg name="tgt_component" value="1"/>
+        </include>
+    </group>
+    <!-- 第64架无人机 -->
+    <group ns="iris_zsj_ir63">
+        <arg name="ID" value="63"/>
+        <arg name="fcu_url" default="udp://:10603@localhost:14643"/>
+        <include file="$(find px4)/launch/single_vehicle_spawn.launch">
+            <arg name="x" value="7.00"/>
+            <arg name="y" value="7.00"/>
+            <arg name="z" value="0.50"/>
+            <arg name="vehicle" value="iris_zsj_ir"/>
+            <arg name="mavlink_udp_port" value="14643"/>
+            <arg name="mavlink_tcp_port" value="4623"/>
             <arg name="ID" value="$(arg ID)"/>
         </include>
 
