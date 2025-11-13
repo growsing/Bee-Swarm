@@ -22,4 +22,4 @@
 
 # 生成并启动4x4无人机集群  
 cd /home/zsj/catkin_ws/src/iris_ir_sitl/shell
-./run_formation.sh --rows 4 --cols 4 --spacing 2
+./run_formation.sh --rows 4 --cols 4 --spacing 2  
