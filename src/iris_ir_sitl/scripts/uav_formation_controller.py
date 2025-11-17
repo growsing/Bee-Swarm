@@ -15,7 +15,7 @@ from geometry_msgs.msg import PoseStamped, Twist
 from std_msgs.msg import Header
 from mavros_msgs.msg import State
 from mavros_msgs.srv import SetMode, CommandBool
-from infrared_agent import InfraredAgent
+from planning_agent import PlanningAgent
 
 class UAVController:
     def __init__(self, uav_id):
@@ -41,8 +41,8 @@ class UAVController:
         self.last_vz = 0.0
         self.smooth_factor = 0.3
         
-        # 红外信号处理代理
-        self.infrared_agent = InfraredAgent(uav_id)
+        # 规划模块
+        self.planning_agent = PlanningAgent(uav_id)
         
         # 速度设定点
         self.velocity_cmd = Twist()
@@ -206,8 +206,8 @@ class UAVController:
         if abs(vz) > 0.1:
             vx, vy = 0.0, 0.0
         else:
-            # 高度稳定时，使用红外信号进行水平移动
-            vx, vy, _ = self.infrared_agent.calculate_movement_velocity(self.current_pose)
+            # 高度稳定时，使用规划模块进行水平移动
+            vx, vy, _ = self.planning_agent.calculate_movement_velocity(self.current_pose)
         
         return vx, vy, vz
     
@@ -290,7 +290,7 @@ class UAVController:
     def stop(self):
         """停止控制器"""
         self.keep_running = False
-        self.infrared_agent.stop()
+        self.planning_agent.stop()
         
         if self.control_thread and self.control_thread.is_alive():
             self.control_thread.join(timeout=2.0)
@@ -408,7 +408,7 @@ class FormationController:
                         
                         # 定期显示状态信息
                         pos = uav.current_pose.pose.position
-                        strength = uav.infrared_agent.get_signal_strength()
+                        strength = uav.planning_agent.get_signal_strength()
                         status = "READY" if (uav.armed and uav.offboard_set) else "STARTING"
                         rospy.loginfo_throttle(5, "UAV {} [{}]: pos({:.2f}, {:.2f}, {:.2f}) | strength: {:.3f}".format(
                             uav.uav_id, status, pos.x, pos.y, pos.z, strength))

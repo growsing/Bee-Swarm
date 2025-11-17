@@ -12,7 +12,7 @@ from geometry_msgs.msg import PoseStamped, Twist
 from std_msgs.msg import Header
 from mavros_msgs.msg import State
 from mavros_msgs.srv import SetMode, CommandBool
-from infrared_agent import InfraredAgent
+from iris_ir_sitl.scripts.PlanningAgent import InfraredAgent
 
 class UAVController:
     def __init__(self, uav_id):
