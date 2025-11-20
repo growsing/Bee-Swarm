@@ -3,7 +3,7 @@
 
 import rospy
 import numpy as np
-from geometry_msgs.msg import Vector3, Twist
+from geometry_msgs.msg import Vector3, Twist, PoseStamped
 
 class PlanningAgent:
     def __init__(self, uav_id):
@@ -13,15 +13,19 @@ class PlanningAgent:
         # 红外信号参数
         self.infrared_direction = Vector3()
         self.infrared_strength = 0.0
-        self.strength_threshold = 0.5
+        self.strength_threshold = 0.4  # 避障阈值
+        self.speed_reduction_threshold = 0.25  # 速度减小阈值
         
-        # 控制参数
-        self.base_speed = 0.6
-        self.max_speed = 1.0
+        # 速度控制参数
+        self.base_speed = 1.0  # 最大速度（上限）
+        self.min_speed = 0.3   # 最小速度（下限）
         
-        # 误差控制系数 (0-1) 0=完全禁用误差
-        self.speed_error_factor = 0.9  # 速度大小误差系数
-        self.direction_error_factor = 0.9 # 方向误差系数
+        # 误差控制系数 (0-1)
+        self.direction_error_factor = 0.5  # 方向误差概率
+        
+        # 无人机当前姿态
+        self.current_yaw = 0.0
+        self.current_pose = None
         
         # 订阅红外信号
         rospy.Subscriber('/uav/infrared/receiver/direction_{}'.format(self.model_name), 
@@ -29,117 +33,189 @@ class PlanningAgent:
         
         rospy.loginfo("PlanningAgent {} initialized".format(uav_id))
     
-    def set_error_factors(self, speed_factor, direction_factor):
+    def set_error_factors(self, direction_factor):
         """
         设置误差控制系数
         Args:
-            speed_factor: 速度大小误差系数 (0-1)
-            direction_factor: 方向误差系数 (0-1)
+            direction_factor: 方向误差概率 (0-1)
         """
-        self.speed_error_factor = max(0.0, min(1.0, speed_factor))
         self.direction_error_factor = max(0.0, min(1.0, direction_factor))
-        rospy.loginfo("UAV {} error factors set - speed: {:.3f}, direction: {:.3f}".format(
-            self.uav_id, self.speed_error_factor, self.direction_error_factor))
+        rospy.loginfo("UAV {} error factor set - direction: {:.3f}".format(
+            self.uav_id, self.direction_error_factor))
+    
+    def _calculate_speed_by_strength(self, strength):
+        """
+        根据红外强度计算速度大小
+        红外强度高于阈值后，速度随红外强度增加而非线性减小
+        """
+        if strength < self.speed_reduction_threshold:
+            # 低于阈值，使用最大速度
+            return self.base_speed
+        elif strength > self.strength_threshold:
+            # 高于避障阈值，使用最小速度（接近停止）
+            return self.min_speed
+        else:
+            # 在阈值和避障阈值之间，非线性减小
+            # 使用指数衰减函数，使速度变化更平滑
+            normalized_strength = (strength - self.speed_reduction_threshold) / (self.strength_threshold - self.speed_reduction_threshold)
+            # 指数衰减：从1衰减到0，然后映射到速度范围
+            decay_factor = np.exp(-3 * normalized_strength)  # 衰减系数
+            speed_range = self.base_speed - self.min_speed
+            current_speed = self.min_speed + speed_range * decay_factor
+            
+            return current_speed
     
     def infrared_callback(self, msg):
         """接收红外方向信息"""
         self.infrared_direction = msg
         self.infrared_strength = msg.z
     
-    def _add_velocity_error(self, vx, vy, vz):
+    def _quaternion_to_euler(self, x, y, z, w):
         """
-        为速度添加随机误差
-        速度大小可能变小(0-max_speed)，方向可能偏差(-90~90度)
-        误差程度由误差控制系数决定
+        将四元数转换为欧拉角（偏航角）
+        替代 tf.transformations.euler_from_quaternion
         """
-        # 如果没有启用误差，直接返回原速度
-        if self.speed_error_factor < 0.001 and self.direction_error_factor < 0.001:
+        # 计算偏航角 (yaw)
+        siny_cosp = 2 * (w * z + x * y)
+        cosy_cosp = 1 - 2 * (y * y + z * z)
+        yaw = np.arctan2(siny_cosp, cosy_cosp)
+        
+        return 0.0, 0.0, yaw  # 只关心偏航角
+    
+    def _update_attitude(self, pose):
+        """从PoseStamped更新无人机姿态"""
+        if pose is None:
+            return
+        
+        self.current_pose = pose
+        # 从四元数提取偏航角
+        orientation = pose.pose.orientation
+        quaternion = [orientation.x, orientation.y, orientation.z, orientation.w]
+        _, _, yaw = self._quaternion_to_euler(*quaternion)
+        self.current_yaw = yaw
+    
+    def _world_to_body_frame(self, vx_world, vy_world):
+        """
+        将世界坐标系下的速度转换到机体坐标系
+        Args:
+            vx_world: 世界坐标系x速度
+            vy_world: 世界坐标系y速度
+        Returns:
+            vx_body, vy_body: 机体坐标系速度
+        """
+        # 如果无人机没有偏航，直接返回原速度
+        if abs(self.current_yaw) < 0.001:
+            return vx_world, vy_world
+        
+        # 坐标系旋转矩阵
+        cos_yaw = np.cos(self.current_yaw)
+        sin_yaw = np.sin(self.current_yaw)
+        
+        # 世界坐标系到机体坐标系的转换
+        vx_body = vx_world * cos_yaw + vy_world * sin_yaw
+        vy_body = -vx_world * sin_yaw + vy_world * cos_yaw
+        
+        return vx_body, vy_body
+    
+    def _body_to_world_frame(self, vx_body, vy_body):
+        """
+        将机体坐标系下的速度转换到世界坐标系
+        Args:
+            vx_body: 机体坐标系x速度
+            vy_body: 机体坐标系y速度
+        Returns:
+            vx_world, vy_world: 世界坐标系速度
+        """
+        # 如果无人机没有偏航，直接返回原速度
+        if abs(self.current_yaw) < 0.001:
+            return vx_body, vy_body
+        
+        # 坐标系旋转矩阵
+        cos_yaw = np.cos(self.current_yaw)
+        sin_yaw = np.sin(self.current_yaw)
+        
+        # 机体坐标系到世界坐标系的转换
+        vx_world = vx_body * cos_yaw - vy_body * sin_yaw
+        vy_world = vx_body * sin_yaw + vy_body * cos_yaw
+        
+        return vx_world, vy_world
+    
+    def _add_velocity_error(self, vx, vy, vz, is_avoiding=False):
+        """
+        为速度添加方向随机误差
+        基于概率模型：以指定概率发生方向误差
+        Args:
+            is_avoiding: 是否处于避障模式，如果是则不添加方向误差
+        """
+        # 如果处于避障模式，不添加方向误差
+        if is_avoiding:
             return vx, vy, vz
         
-        # 速度大小误差 - 使用指数分布，误差程度由系数控制
-        if self.speed_error_factor > 0.001:
-            # 基础误差量，使用指数分布使小误差更可能出现
-            base_speed_reduction = np.random.exponential(0.2)
-            # 根据误差系数缩放误差程度
-            speed_reduction = base_speed_reduction * self.speed_error_factor
-            speed_reduction = min(speed_reduction, 1.0)  # 限制在0-1范围内
-        else:
-            speed_reduction = 0.0
-        
+        # 计算当前速度大小
         current_speed = np.sqrt(vx**2 + vy**2 + vz**2)
-        if current_speed > 0:
-            new_speed = current_speed * (1 - speed_reduction)
-            speed_scale = new_speed / current_speed
-        else:
-            speed_scale = 1.0
         
-        # 方向误差 - 使用正态分布，误差程度由系数控制
-        if self.direction_error_factor > 0.001:
-            # 基础角度误差，使用正态分布使小角度偏差更可能出现
-            base_angle_error = np.random.normal(0, 15)  # 均值为0，标准差15度
-            # 根据误差系数缩放误差程度
-            angle_error = base_angle_error * self.direction_error_factor
-            angle_error = max(min(angle_error, 90), -90)  # 限制在-90到90度范围内
-        else:
-            angle_error = 0.0
+        # 方向误差处理（仅对水平速度）
+        final_vx, final_vy, final_vz = vx, vy, vz
         
-        # 应用方向误差（仅对水平速度）
         if abs(vx) > 0.001 or abs(vy) > 0.001:
-            current_angle = np.arctan2(vy, vx)
-            new_angle = current_angle + np.radians(angle_error)
-            
-            # 应用误差后的速度
-            vx_error = np.cos(new_angle) * np.sqrt(vx**2 + vy**2) * speed_scale
-            vy_error = np.sin(new_angle) * np.sqrt(vx**2 + vy**2) * speed_scale
-            vz_error = vz * speed_scale
-        else:
-            vx_error = vx * speed_scale
-            vy_error = vy * speed_scale
-            vz_error = vz * speed_scale
+            if self.direction_error_factor > 0.001 and np.random.random() < self.direction_error_factor:
+                # 发生方向误差，在0-360度范围内均匀随机选择新方向
+                new_angle = np.random.random() * 2 * np.pi  # 0-2π均匀分布
+                final_vx = np.cos(new_angle) * current_speed
+                final_vy = np.sin(new_angle) * current_speed
+                rospy.logdebug_throttle(5, "UAV {} direction error occurred, new angle: {:.1f}°".format(
+                    self.uav_id, np.degrees(new_angle)))
         
-        rospy.logdebug_throttle(5, "UAV {} velocity error - speed reduction: {:.3f}, angle error: {:.1f}°".format(
-            self.uav_id, speed_reduction, angle_error))
-        
-        return vx_error, vy_error, vz_error
+        return final_vx, final_vy, final_vz
     
     def calculate_movement_velocity(self, current_pose=None):
         """
         根据红外信号计算移动速度
-        返回: (vx, vy, vz) 速度指令
+        返回: (vx, vy, vz) 速度指令（世界坐标系）
         """
+        # 更新当前姿态
+        self._update_attitude(current_pose)
+        
         # 如果没有红外信号，返回零速度
         if self.infrared_strength < 0.001:
             return 0.0, 0.0, 0.0
         
-        # 获取红外方向
-        dir_x = self.infrared_direction.x
-        dir_y = self.infrared_direction.y
+        # 获取红外方向（世界坐标系下的单位向量）
+        dir_x_world = self.infrared_direction.x
+        dir_y_world = self.infrared_direction.y
         
-        # 如果信号强度超过阈值，反向移动
-        if self.infrared_strength > self.strength_threshold:
-            dir_x = -dir_x
-            dir_y = -dir_y
-            rospy.loginfo_throttle(2, "UAV {} avoiding collision (strength: {:.3f})".format(
-                self.uav_id, self.infrared_strength))
+        # 根据红外强度计算当前速度大小
+        current_speed = self._calculate_speed_by_strength(self.infrared_strength)
+        
+        # 判断是否处于避障模式
+        is_avoiding = self.infrared_strength > self.strength_threshold
+        
+        # 如果信号强度超过避障阈值，反向移动
+        if is_avoiding:
+            dir_x_world = -dir_x_world
+            dir_y_world = -dir_y_world
+            rospy.loginfo_throttle(2, "UAV {} avoiding collision (strength: {:.3f}, speed: {:.3f})".format(
+                self.uav_id, self.infrared_strength, current_speed))
         else:
-            rospy.loginfo_throttle(2, "UAV {} moving toward signal (strength: {:.3f})".format(
-                self.uav_id, self.infrared_strength))
+            rospy.loginfo_throttle(2, "UAV {} moving toward signal (strength: {:.3f}, speed: {:.3f})".format(
+                self.uav_id, self.infrared_strength, current_speed))
         
-        # 计算水平速度
-        vx = dir_x * self.base_speed
-        vy = dir_y * self.base_speed
+        # 计算世界坐标系下的速度向量
+        vx_world = dir_x_world * current_speed
+        vy_world = dir_y_world * current_speed
+        vz_world = 0.0
         
-        # 限制最大速度
-        speed_xy = np.sqrt(vx**2 + vy**2)
-        if speed_xy > self.max_speed:
-            scale = self.max_speed / speed_xy
-            vx *= scale
-            vy *= scale
+        # 将速度转换到机体坐标系进行误差处理
+        vx_body, vy_body = self._world_to_body_frame(vx_world, vy_world)
         
-        # 添加速度误差
-        vx_error, vy_error, vz_error = self._add_velocity_error(vx, vy, 0.0)
+        # 在机体坐标系中添加方向误差（避障模式下不添加）
+        vx_body_error, vy_body_error, vz_error = self._add_velocity_error(
+            vx_body, vy_body, vz_world, is_avoiding)
         
-        return vx_error, vy_error, vz_error
+        # 将误差后的速度转换回世界坐标系
+        vx_world_error, vy_world_error = self._body_to_world_frame(vx_body_error, vy_body_error)
+        
+        return vx_world_error, vy_world_error, vz_error
     
     def get_signal_strength(self):
         """获取当前信号强度"""
@@ -151,10 +227,22 @@ class PlanningAgent:
     
     def get_error_factors(self):
         """获取当前误差控制系数"""
-        return self.speed_error_factor, self.direction_error_factor
+        return self.direction_error_factor
+    
+    def set_speed_parameters(self, base_speed, min_speed, reduction_threshold):
+        """
+        设置速度相关参数
+        Args:
+            base_speed: 基础速度（上限）
+            min_speed: 最小速度（下限）
+            reduction_threshold: 速度减小阈值
+        """
+        self.base_speed = base_speed
+        self.min_speed = min_speed
+        self.speed_reduction_threshold = reduction_threshold
+        rospy.loginfo("UAV {} speed parameters set - base: {:.3f}, min: {:.3f}, threshold: {:.3f}".format(
+            self.uav_id, base_speed, min_speed, reduction_threshold))
     
     def stop(self):
-        """停止信号处理"""
-        pass
         """停止信号处理"""
         pass

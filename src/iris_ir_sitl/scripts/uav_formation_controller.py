@@ -95,6 +95,9 @@ class UAVController:
         self.current_x = msg.pose.position.x
         self.current_y = msg.pose.position.y
         self.current_z = msg.pose.position.z
+        
+        # 立即更新规划模块的姿态信息
+        self.planning_agent._update_attitude(msg)
     
     def state_callback(self, msg):
         """接收状态信息"""
@@ -197,7 +200,7 @@ class UAVController:
     def make_decision(self):
         """
         综合决策函数
-        返回: (vx, vy, vz) 速度指令
+        返回: (vx, vy, vz) 速度指令（世界坐标系）
         """
         # 高度控制
         vz = self._height_control()
@@ -207,6 +210,7 @@ class UAVController:
             vx, vy = 0.0, 0.0
         else:
             # 高度稳定时，使用规划模块进行水平移动
+            # 传入当前姿态信息用于坐标系转换
             vx, vy, _ = self.planning_agent.calculate_movement_velocity(self.current_pose)
         
         return vx, vy, vz
@@ -282,8 +286,15 @@ class UAVController:
             # 平滑速度变化
             smooth_vx, smooth_vy, smooth_vz = self.smooth_velocity(vx, vy, vz)
             
-            # 发送速度指令
+            # 发送速度指令（世界坐标系）
             self.publish_velocity(smooth_vx, smooth_vy, smooth_vz)
+            
+            # 定期显示状态信息
+            if self.current_pose:
+                pos = self.current_pose.pose.position
+                strength = self.planning_agent.get_signal_strength()
+                rospy.loginfo_throttle(10, "UAV {}: pos({:.2f}, {:.2f}, {:.2f}) | speed({:.2f}, {:.2f}, {:.2f}) | strength: {:.3f}".format(
+                    self.uav_id, pos.x, pos.y, pos.z, smooth_vx, smooth_vy, smooth_vz, strength))
             
             rate.sleep()
     
@@ -292,8 +303,13 @@ class UAVController:
         self.keep_running = False
         self.planning_agent.stop()
         
+        # 发送停止指令
+        self.publish_velocity(0.0, 0.0, 0.0)
+        
         if self.control_thread and self.control_thread.is_alive():
             self.control_thread.join(timeout=2.0)
+        
+        rospy.loginfo("UAV {} controller stopped".format(self.uav_id))
 
 
 class FormationController:
@@ -405,13 +421,6 @@ class FormationController:
                         active_count += 1
                         if uav.armed and uav.offboard_set:
                             ready_count += 1
-                        
-                        # 定期显示状态信息
-                        pos = uav.current_pose.pose.position
-                        strength = uav.planning_agent.get_signal_strength()
-                        status = "READY" if (uav.armed and uav.offboard_set) else "STARTING"
-                        rospy.loginfo_throttle(5, "UAV {} [{}]: pos({:.2f}, {:.2f}, {:.2f}) | strength: {:.3f}".format(
-                            uav.uav_id, status, pos.x, pos.y, pos.z, strength))
                 
                 # 显示总体状态
                 rospy.loginfo_throttle(10, "Formation Status: {}/{} UAVs active, {}/{} READY".format(
