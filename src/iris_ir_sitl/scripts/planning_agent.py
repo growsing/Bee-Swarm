@@ -13,15 +13,15 @@ class PlanningAgent:
         # 红外信号参数
         self.infrared_direction = Vector3()
         self.infrared_strength = 0.0
-        self.strength_threshold = 0.4  # 避障阈值
-        self.speed_reduction_threshold = 0.25  # 速度减小阈值
+        self.strength_threshold = 0.5  # 避障阈值
+        self.speed_reduction_threshold = 0.3  # 速度减小阈值
         
         # 速度控制参数
-        self.base_speed = 1.0  # 最大速度（上限）
+        self.base_speed = 1.1  # 最大速度（上限）
         self.min_speed = 0.3   # 最小速度（下限）
         
         # 误差控制系数 (0-1)
-        self.direction_error_factor = 0.5  # 方向误差概率
+        self.direction_error_factor = 0.1  # 方向误差概率
         
         # 无人机当前姿态
         self.current_yaw = 0.0

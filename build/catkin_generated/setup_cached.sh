@@ -7,6 +7,6 @@
 # new environment variables
 
 # modified environment variables
-export PATH='/opt/ros/melodic/bin:/home/zsj/px4-venv/bin:/home/zsj/px4-venv/bin:/home/zsj/px4-venv/bin:/home/zsj/px4-venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin'
+export PATH='/opt/ros/melodic/bin:/opt/cmake-3.25.3-linux-x86_64/bin:/home/zsj/px4-venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin'
 export PWD='/home/zsj/catkin_ws/build'
 export ROS_PACKAGE_PATH='/home/zsj/catkin_ws/src:/opt/ros/melodic/share'

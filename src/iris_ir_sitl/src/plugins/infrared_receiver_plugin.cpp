@@ -158,9 +158,31 @@ private:
     
     void OnOtherUavSignal(const geometry_msgs::Vector3::ConstPtr& msg, const std::string& emitter_name)
     {
-        // 存储其他无人机的位置信息
+        // 存储其他无人机的位置和速度信息
         std::lock_guard<std::mutex> lock(this->dataMutex);
-        this->otherUavPositions[emitter_name] = *msg;
+        
+        // 检查是否已经有这个发射器的历史数据
+        if (this->otherUavData.find(emitter_name) != this->otherUavData.end()) {
+            // 计算速度（位置变化率）
+            auto& data = this->otherUavData[emitter_name];
+            double dt = 0.5; // 假设更新频率为2Hz
+            
+            // 计算速度
+            ignition::math::Vector3d new_pos(msg->x, msg->y, msg->z);
+            ignition::math::Vector3d velocity = (new_pos - data.position) / dt;
+            
+            // 更新位置和速度
+            data.position = new_pos;
+            data.velocity = velocity;
+            data.last_update_time = this->model->GetWorld()->SimTime();
+        } else {
+            // 第一次收到这个发射器的数据
+            UavData new_data;
+            new_data.position = ignition::math::Vector3d(msg->x, msg->y, msg->z);
+            new_data.velocity = ignition::math::Vector3d(0, 0, 0); // 初始速度为0
+            new_data.last_update_time = this->model->GetWorld()->SimTime();
+            this->otherUavData[emitter_name] = new_data;
+        }
     }
     
     // 计算四个接收器阵列的位置（相对于无人机中心）
@@ -203,10 +225,46 @@ private:
         return orientations;
     }
     
-    // 计算信号强度（考虑距离和方向）
+    // 计算运动方向增强因子
+    double calculateMotionDirectionFactor(const ignition::math::Vector3d& emitterPos,
+                                         const ignition::math::Vector3d& emitterVelocity,
+                                         const ignition::math::Vector3d& receiverPos)
+    {
+        // 如果速度很小，不应用方向增强
+        if (emitterVelocity.Length() < 0.1) {
+            return 1.0;
+        }
+        
+        // 计算从发射器指向接收器的方向
+        ignition::math::Vector3d toReceiver = receiverPos - emitterPos;
+        toReceiver.Normalize();
+        
+        // 归一化发射器速度方向
+        ignition::math::Vector3d emitterDirection = emitterVelocity;
+        emitterDirection.Normalize();
+        
+        // 计算两个方向之间的夹角余弦值
+        double cosAngle = toReceiver.Dot(emitterDirection);
+        
+        // 计算夹角（弧度）
+        double angle = std::acos(std::max(-1.0, std::min(1.0, cosAngle)));
+        
+        // 45度 = π/4 弧度
+        double half_angle_range = M_PI / 4.0; // 45度，总共90度范围
+        
+        // 如果在运动方向的前方90度范围内，信号强度加倍
+        if (angle <= half_angle_range) {
+            return 2.0; // 前方90度范围内，信号强度为2倍
+        } else {
+            return 1.0; // 其他270度范围，正常信号强度
+        }
+    }
+    
+    // 计算信号强度（考虑距离、方向和运动方向）
     double calculateSignalStrength(const ignition::math::Vector3d& receiverPos, 
                                   const ignition::math::Vector3d& emitterPos,
-                                  const ignition::math::Vector3d& receiverOrientation)
+                                  const ignition::math::Vector3d& receiverOrientation,
+                                  const ignition::math::Vector3d& emitterVelocity)
     {
         // 计算距离
         double distance = receiverPos.Distance(emitterPos);
@@ -225,7 +283,10 @@ private:
         // 添加方向灵敏度 - 当信号源在接收器正前方时信号最强
         double sensitivity = 1.0 + 2.0 * directionFactor; // 前方信号增强
         
-        double strength = sensitivity * directionFactor / (1.0 + distance * distance);
+        // 计算运动方向增强因子
+        double motionFactor = calculateMotionDirectionFactor(emitterPos, emitterVelocity, receiverPos);
+        
+        double strength = motionFactor * sensitivity * directionFactor / (1.0 + distance * distance);
         
         return strength;
     }
@@ -264,16 +325,18 @@ private:
         std::vector<double> receiverStrengths(4, 0.0);
         
         // 计算每个接收器从所有发射器接收到的总信号强度
-        for (const auto& pair : this->otherUavPositions) {
-            const geometry_msgs::Vector3& emitter_pos = pair.second;
-            ignition::math::Vector3d emitterPos(emitter_pos.x, emitter_pos.y, emitter_pos.z);
+        for (const auto& pair : this->otherUavData) {
+            const UavData& emitter_data = pair.second;
+            ignition::math::Vector3d emitterPos = emitter_data.position;
+            ignition::math::Vector3d emitterVelocity = emitter_data.velocity;
             
             // 为每个接收器计算信号强度
             for (int i = 0; i < 4; i++) {
                 double strength = calculateSignalStrength(
                     receiverPositions[i], 
                     emitterPos, 
-                    receiverOrientations[i]);
+                    receiverOrientations[i],
+                    emitterVelocity);
                 receiverStrengths[i] += strength;
             }
         }
@@ -345,6 +408,13 @@ private:
         this->updateCount++;
     }
 
+    // 无人机数据结构
+    struct UavData {
+        ignition::math::Vector3d position;
+        ignition::math::Vector3d velocity;
+        common::Time last_update_time;
+    };
+
     physics::ModelPtr model;
     std::string modelName;
     event::ConnectionPtr updateConnection;
@@ -355,7 +425,7 @@ private:
     
     // 订阅器管理
     std::map<std::string, ros::Subscriber> otherUavSubscriptions;
-    std::map<std::string, geometry_msgs::Vector3> otherUavPositions;
+    std::map<std::string, UavData> otherUavData; // 改为存储完整数据
     std::mutex dataMutex;
     
     // 定时器

@@ -136,7 +136,17 @@ private:
         ignition::math::Pose3d pose = this->model->WorldPose();
         ignition::math::Vector3d pos = pose.Pos();
 
-        // 发布位置信息
+        // 计算速度（基于位置变化）
+        ignition::math::Vector3d velocity(0, 0, 0);
+        if (this->lastPosition != ignition::math::Vector3d::Zero) {
+            double dt = (_info.simTime - this->lastUpdateTime).Double();
+            if (dt > 0) {
+                velocity = (pos - this->lastPosition) / dt;
+            }
+        }
+        this->lastPosition = pos;
+
+        // 发布位置信息（现在包含位置信息，速度信息在接收器中计算）
         geometry_msgs::Vector3 signalMsg;
         signalMsg.x = pos.X();
         signalMsg.y = pos.Y();
@@ -148,7 +158,9 @@ private:
         if (this->updateCount % 20 == 0) {
             gzmsg << "📤 [" << this->modelName << "] at (" 
                   << std::fixed << std::setprecision(1) 
-                  << pos.X() << ", " << pos.Y() << ", " << pos.Z() << ")" << std::endl;
+                  << pos.X() << ", " << pos.Y() << ", " << pos.Z() << ")"
+                  << " velocity: (" << std::setprecision(2)
+                  << velocity.X() << ", " << velocity.Y() << ", " << velocity.Z() << ")" << std::endl;
         }
         this->updateCount++;
     }
@@ -160,6 +172,7 @@ private:
     ros::Publisher signalPub;
     
     common::Time lastUpdateTime;
+    ignition::math::Vector3d lastPosition;
     int updateCount;
 };
 
