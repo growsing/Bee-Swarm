@@ -11,6 +11,7 @@ import threading
 import time
 import os
 import yaml
+import numpy as np
 from geometry_msgs.msg import PoseStamped, Twist
 from std_msgs.msg import Header
 from mavros_msgs.msg import State
@@ -39,6 +40,7 @@ class UAVController:
         self.last_vx = 0.0
         self.last_vy = 0.0
         self.last_vz = 0.0
+        self.last_yaw_rate = 0.0
         self.smooth_factor = 0.3
         
         # 规划模块
@@ -160,26 +162,32 @@ class UAVController:
             rospy.logerr("UAV {} arming service call failed: {}".format(self.uav_id, e))
             return False
     
-    def smooth_velocity(self, vx, vy, vz):
+    def smooth_velocity(self, vx, vy, vz, yaw_rate):
         """平滑速度变化"""
         smooth_vx = self.last_vx * (1 - self.smooth_factor) + vx * self.smooth_factor
         smooth_vy = self.last_vy * (1 - self.smooth_factor) + vy * self.smooth_factor
         smooth_vz = self.last_vz * (1 - self.smooth_factor) + vz * self.smooth_factor
+        smooth_yaw_rate = self.last_yaw_rate * (1 - self.smooth_factor) + yaw_rate * self.smooth_factor
         
         # 限制垂直速度
         smooth_vz = max(min(smooth_vz, 0.5), -0.5)
         
+        # 限制偏航角速度
+        smooth_yaw_rate = max(min(smooth_yaw_rate, 1.0), -1.0)
+        
         self.last_vx = smooth_vx
         self.last_vy = smooth_vy
         self.last_vz = smooth_vz
+        self.last_yaw_rate = smooth_yaw_rate
         
-        return smooth_vx, smooth_vy, smooth_vz
+        return smooth_vx, smooth_vy, smooth_vz, smooth_yaw_rate
     
-    def publish_velocity(self, vx=0.0, vy=0.0, vz=0.0):
+    def publish_velocity(self, vx=0.0, vy=0.0, vz=0.0, yaw_rate=0.0):
         """发布速度指令"""
         self.velocity_cmd.linear.x = vx
         self.velocity_cmd.linear.y = vy
         self.velocity_cmd.linear.z = vz
+        self.velocity_cmd.angular.z = yaw_rate  # 添加偏航角速度
         self.vel_pub.publish(self.velocity_cmd)
     
     def _height_control(self):
@@ -200,20 +208,19 @@ class UAVController:
     def make_decision(self):
         """
         综合决策函数
-        返回: (vx, vy, vz) 速度指令（世界坐标系）
+        返回: (vx, vy, vz, yaw_rate) 速度指令和偏航角速度
         """
         # 高度控制
         vz = self._height_control()
         
         # 如果高度不稳定，优先控制高度
         if abs(vz) > 0.1:
-            vx, vy = 0.0, 0.0
+            vx, vy, yaw_rate = 0.0, 0.0, 0.0
         else:
-            # 高度稳定时，使用规划模块进行水平移动
-            # 传入当前姿态信息用于坐标系转换
-            vx, vy, _ = self.planning_agent.calculate_movement_velocity(self.current_pose)
+            # 高度稳定时，使用规划模块进行移动
+            vx, vy, vz_plan, yaw_rate = self.planning_agent.calculate_movement_velocity(self.current_pose)
         
-        return vx, vy, vz
+        return vx, vy, vz, yaw_rate
     
     def start(self):
         """启动无人机控制线程"""
@@ -237,8 +244,19 @@ class UAVController:
         for i in range(50):
             if not self.keep_running or rospy.is_shutdown():
                 return
-            self.publish_velocity(0.0, 0.0, 0.0)
-            rate.sleep()
+            self.publish_velocity(0.0, 0.0, 0.0, 0.0)
+            rate.sleep()        
+        # client - 设置模式和解锁
+        try:
+            rospy.wait_for_service('/{}/mavros/set_mode'.format(self.namespace), timeout=10)
+            rospy.wait_for_service('/{}/mavros/cmd/arming'.format(self.namespace), timeout=10)
+            self.set_mode_client = rospy.ServiceProxy('/{}/mavros/set_mode'.format(self.namespace), SetMode)
+            self.arm_client = rospy.ServiceProxy('/{}/mavros/cmd/arming'.format(self.namespace), CommandBool)
+            rospy.loginfo("UAV {} service clients initialized".format(self.uav_id))
+        except rospy.ROSException as e:
+            rospy.logerr("UAV {} failed to initialize service clients: {}".format(self.uav_id, e))
+            self.set_mode_client = None
+            self.arm_client = None
         
         # 阶段2: OFFBOARD模式和解锁
         rospy.loginfo("UAV {} attempting OFFBOARD and arming...".format(self.uav_id))
@@ -248,7 +266,7 @@ class UAVController:
             current_time = rospy.Time.now()
             
             # 持续发布速度指令
-            self.publish_velocity(0.0, 0.0, 0.0)
+            self.publish_velocity(0.0, 0.0, 0.0, 0.0)
             
             # 设置OFFBOARD模式
             if not self.offboard_set:
@@ -281,20 +299,38 @@ class UAVController:
         
         while not rospy.is_shutdown() and self.keep_running:
             # 综合决策
-            vx, vy, vz = self.make_decision()
+            vx, vy, vz, yaw_rate = self.make_decision()
             
             # 平滑速度变化
-            smooth_vx, smooth_vy, smooth_vz = self.smooth_velocity(vx, vy, vz)
+            smooth_vx, smooth_vy, smooth_vz, smooth_yaw_rate = self.smooth_velocity(vx, vy, vz, yaw_rate)
             
             # 发送速度指令（世界坐标系）
-            self.publish_velocity(smooth_vx, smooth_vy, smooth_vz)
+            self.publish_velocity(smooth_vx, smooth_vy, smooth_vz, smooth_yaw_rate)
             
             # 定期显示状态信息
             if self.current_pose:
                 pos = self.current_pose.pose.position
                 strength = self.planning_agent.get_signal_strength()
-                rospy.loginfo_throttle(10, "UAV {}: pos({:.2f}, {:.2f}, {:.2f}) | speed({:.2f}, {:.2f}, {:.2f}) | strength: {:.3f}".format(
-                    self.uav_id, pos.x, pos.y, pos.z, smooth_vx, smooth_vy, smooth_vz, strength))
+                
+                # 获取当前偏航角
+                current_yaw = self.planning_agent.current_yaw
+                target_yaw = self.planning_agent.target_yaw
+                is_rotating = self.planning_agent.is_rotating
+                
+                rotation_status = "ROTATING" if is_rotating else "ALIGNED"
+                
+                rospy.loginfo_throttle(10, 
+                    "UAV {}: pos({:.2f}, {:.2f}, {:.2f}) | "
+                    "speed({:.2f}, {:.2f}, {:.2f}) | "
+                    "yaw_rate: {:.2f} | "
+                    "yaw: {:.1f}°->{:.1f}° [{}] | "
+                    "strength: {:.3f}".format(
+                    self.uav_id, 
+                    pos.x, pos.y, pos.z,
+                    smooth_vx, smooth_vy, smooth_vz,
+                    smooth_yaw_rate,
+                    np.degrees(current_yaw), np.degrees(target_yaw), rotation_status,
+                    strength))
             
             rate.sleep()
     
@@ -304,7 +340,7 @@ class UAVController:
         self.planning_agent.stop()
         
         # 发送停止指令
-        self.publish_velocity(0.0, 0.0, 0.0)
+        self.publish_velocity(0.0, 0.0, 0.0, 0.0)
         
         if self.control_thread and self.control_thread.is_alive():
             self.control_thread.join(timeout=2.0)
