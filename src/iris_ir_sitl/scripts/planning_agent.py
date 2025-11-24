@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+# 25-11-24 测试无旋转行为代码前备份
+
 import rospy
 import numpy as np
 from geometry_msgs.msg import Vector3, Twist, PoseStamped
