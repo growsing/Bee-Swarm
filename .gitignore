@@ -36,3 +36,6 @@ Thumbs.db
 # 文档备份文件
 *.bak
 *.backup
+
+# 忽略 experiment_data 文件夹下的实验结果数据
+src/iris_ir_sitl/scripts/experiment_data/*

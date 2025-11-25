@@ -17,9 +17,12 @@ from std_msgs.msg import Header
 from mavros_msgs.msg import State
 from mavros_msgs.srv import SetMode, CommandBool
 from planning_agent import PlanningAgent
+from data_logger import DataLogger 
+import time
+from datetime import datetime
 
 class UAVController:
-    def __init__(self, uav_id):
+    def __init__(self, uav_id, experiment_timestamp): 
         self.uav_id = uav_id
         self.namespace = "iris_zsj_ir{}".format(uav_id)
         
@@ -46,13 +49,23 @@ class UAVController:
         # 规划模块
         self.planning_agent = PlanningAgent(uav_id)
         
+        # 数据记录器
+        self.data_logger = DataLogger(uav_id, experiment_timestamp)
+        self.last_log_time = 0
+        self.log_interval = 0.1  # 10Hz记录频率
+        
         # 速度设定点
         self.velocity_cmd = Twist()
         
-        # 当前位置
+        # 当前位置和速度
         self.current_x = 0.0
         self.current_y = 0.0
         self.current_z = 0.0
+        self.current_vx = 0.0
+        self.current_vy = 0.0
+        self.current_vz = 0.0
+        self.last_position = None
+        self.last_position_time = None
         
         # 线程控制
         self.keep_running = True
@@ -94,9 +107,22 @@ class UAVController:
     def pose_callback(self, msg):
         """接收位置信息"""
         self.current_pose = msg
+        current_position = (msg.pose.position.x, msg.pose.position.y, msg.pose.position.z)
+        current_time = rospy.get_time()
+        
+        # 计算速度
+        if self.last_position is not None and self.last_position_time is not None:
+            dt = current_time - self.last_position_time
+            if dt > 0:
+                self.current_vx = (msg.pose.position.x - self.last_position[0]) / dt
+                self.current_vy = (msg.pose.position.y - self.last_position[1]) / dt
+                self.current_vz = (msg.pose.position.z - self.last_position[2]) / dt
+        
         self.current_x = msg.pose.position.x
         self.current_y = msg.pose.position.y
         self.current_z = msg.pose.position.z
+        self.last_position = current_position
+        self.last_position_time = current_time
         
         # 立即更新规划模块的姿态信息
         self.planning_agent._update_attitude(msg)
@@ -113,6 +139,56 @@ class UAVController:
         if msg.mode == "OFFBOARD" and not self.offboard_set:
             self.offboard_set = True
             rospy.loginfo("UAV {} OFFBOARD mode set!".format(self.uav_id))
+    
+    def log_experiment_data(self, vx_cmd, vy_cmd, vz_cmd, yaw_rate_cmd):
+        """
+        记录实验数据
+        Args:
+            vx_cmd, vy_cmd, vz_cmd, yaw_rate_cmd: 控制指令
+        """
+        current_time = rospy.get_time()
+        if current_time - self.last_log_time < self.log_interval:
+            return
+        
+        if self.current_pose:
+            # 计算高度误差
+            altitude_error = self.target_altitude - self.current_z
+            
+            # 确定控制模式
+            control_mode = "HEIGHT_CONTROL" if abs(altitude_error) > 0.1 else "FORMATION_CONTROL"
+            
+            # 计算当前速度大小
+            current_speed = np.sqrt(self.current_vx**2 + self.current_vy**2)
+            
+            # 准备数据字典
+            data_dict = {
+                'timestamp': time.time(),
+                'sim_time': current_time,
+                'pos_x': self.current_x,
+                'pos_y': self.current_y,
+                'pos_z': self.current_z,
+                'vel_x': self.current_vx,
+                'vel_y': self.current_vy,
+                'vel_z': self.current_vz,
+                'yaw': self.planning_agent.current_yaw,
+                'target_yaw': self.planning_agent.target_yaw,
+                'yaw_rate': 0.0,  # 可以从IMU数据获取，这里简化
+                'infrared_strength': self.planning_agent.get_signal_strength(),
+                'infrared_dir_x': self.planning_agent.infrared_direction.x,
+                'infrared_dir_y': self.planning_agent.infrared_direction.y,
+                'is_avoiding': self.planning_agent.get_signal_strength() > self.planning_agent.strength_threshold,
+                'current_speed': current_speed,
+                'vx_cmd': vx_cmd,
+                'vy_cmd': vy_cmd,
+                'vz_cmd': vz_cmd,
+                'yaw_rate_cmd': yaw_rate_cmd,
+                'altitude_error': altitude_error,
+                'control_mode': control_mode
+            }
+            
+            # 记录数据
+            self.data_logger.log_data(data_dict)
+            self.last_log_time = current_time
     
     def wait_for_connection(self, timeout=30):
         """等待连接到MAVROS"""
@@ -187,7 +263,7 @@ class UAVController:
         self.velocity_cmd.linear.x = vx
         self.velocity_cmd.linear.y = vy
         self.velocity_cmd.linear.z = vz
-        self.velocity_cmd.angular.z = yaw_rate  # 添加偏航角速度
+        self.velocity_cmd.angular.z = yaw_rate
         self.vel_pub.publish(self.velocity_cmd)
     
     def _height_control(self):
@@ -245,18 +321,7 @@ class UAVController:
             if not self.keep_running or rospy.is_shutdown():
                 return
             self.publish_velocity(0.0, 0.0, 0.0, 0.0)
-            rate.sleep()        
-        # client - 设置模式和解锁
-        try:
-            rospy.wait_for_service('/{}/mavros/set_mode'.format(self.namespace), timeout=10)
-            rospy.wait_for_service('/{}/mavros/cmd/arming'.format(self.namespace), timeout=10)
-            self.set_mode_client = rospy.ServiceProxy('/{}/mavros/set_mode'.format(self.namespace), SetMode)
-            self.arm_client = rospy.ServiceProxy('/{}/mavros/cmd/arming'.format(self.namespace), CommandBool)
-            rospy.loginfo("UAV {} service clients initialized".format(self.uav_id))
-        except rospy.ROSException as e:
-            rospy.logerr("UAV {} failed to initialize service clients: {}".format(self.uav_id, e))
-            self.set_mode_client = None
-            self.arm_client = None
+            rate.sleep()
         
         # 阶段2: OFFBOARD模式和解锁
         rospy.loginfo("UAV {} attempting OFFBOARD and arming...".format(self.uav_id))
@@ -307,6 +372,9 @@ class UAVController:
             # 发送速度指令（世界坐标系）
             self.publish_velocity(smooth_vx, smooth_vy, smooth_vz, smooth_yaw_rate)
             
+            # 记录实验数据
+            self.log_experiment_data(smooth_vx, smooth_vy, smooth_vz, smooth_yaw_rate)
+            
             # 定期显示状态信息
             if self.current_pose:
                 pos = self.current_pose.pose.position
@@ -338,6 +406,7 @@ class UAVController:
         """停止控制器"""
         self.keep_running = False
         self.planning_agent.stop()
+        self.data_logger.stop_logging()
         
         # 发送停止指令
         self.publish_velocity(0.0, 0.0, 0.0, 0.0)
@@ -351,16 +420,18 @@ class UAVController:
 class FormationController:
     def __init__(self):
         rospy.init_node('formation_controller')
-        
-        # 获取无人机数量配置
         self.total_uavs = self.get_uav_count()
-        
-        # 动态创建无人机控制器
+
+        # ✅ 只生成一次时间戳
+        experiment_timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+
         self.uavs = []
         for uav_id in range(self.total_uavs):
-            self.uavs.append(UAVController(uav_id))
-        
+            # ✅ 把同一时间戳递给每架飞机
+            self.uavs.append(UAVController(uav_id, experiment_timestamp))
+
         rospy.loginfo("Formation controller initialized for {} UAVs".format(len(self.uavs)))
+
     
     def get_uav_count(self):
         """获取无人机总数"""
