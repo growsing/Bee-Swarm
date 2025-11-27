@@ -18,9 +18,11 @@ from mavros_msgs.msg import State
 from mavros_msgs.srv import SetMode, CommandBool
 from planning_agent import PlanningAgent
 from data_logger import DataLogger 
+import time
+from datetime import datetime
 
 class UAVController:
-    def __init__(self, uav_id):
+    def __init__(self, uav_id, experiment_timestamp): 
         self.uav_id = uav_id
         self.namespace = "iris_zsj_ir{}".format(uav_id)
         
@@ -48,7 +50,7 @@ class UAVController:
         self.planning_agent = PlanningAgent(uav_id)
         
         # 数据记录器
-        self.data_logger = DataLogger(uav_id)
+        self.data_logger = DataLogger(uav_id, experiment_timestamp)
         self.last_log_time = 0
         self.log_interval = 0.1  # 10Hz记录频率
         
@@ -418,16 +420,18 @@ class UAVController:
 class FormationController:
     def __init__(self):
         rospy.init_node('formation_controller')
-        
-        # 获取无人机数量配置
         self.total_uavs = self.get_uav_count()
-        
-        # 动态创建无人机控制器
+
+        # ✅ 只生成一次时间戳
+        experiment_timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+
         self.uavs = []
         for uav_id in range(self.total_uavs):
-            self.uavs.append(UAVController(uav_id))
-        
+            # ✅ 把同一时间戳递给每架飞机
+            self.uavs.append(UAVController(uav_id, experiment_timestamp))
+
         rospy.loginfo("Formation controller initialized for {} UAVs".format(len(self.uavs)))
+
     
     def get_uav_count(self):
         """获取无人机总数"""

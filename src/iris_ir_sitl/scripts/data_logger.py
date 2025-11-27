@@ -12,12 +12,14 @@ class DataLogger:
         self.uav_id = uav_id
         # 用外部传进来的统一时间戳
         timestamp = experiment_timestamp
-        experiment_dir = os.path.join(log_dir, f"experiment_{timestamp}")
-        if not os.path.exists(experiment_dir):
-            os.makedirs(experiment_dir)
-
-        self.filename = os.path.join(experiment_dir,f"uav_{uav_id}_experiment_{timestamp}.csv")
         
+        # 创建实验目录和raw_data子目录
+        experiment_dir = os.path.join(log_dir, f"experiment_{timestamp}")
+        raw_data_dir = os.path.join(experiment_dir, "raw_data")
+        if not os.path.exists(raw_data_dir):
+            os.makedirs(raw_data_dir)
+
+        self.filename = os.path.join(raw_data_dir, f"uav_{uav_id}_experiment_{timestamp}.csv")
         
         # 初始化记录状态
         self.is_logging = False
